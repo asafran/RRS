@@ -18,9 +18,9 @@
 #include    <sstream>
 #include    <vector>
 
-#include    <osg/PagedLOD>
-#include    <osg/Geode>
-#include    <osg/Material>
+//#include    <osg/PagedLOD>
+//#include    <osg/Geode>
+//#include    <osg/Material>
 
 //------------------------------------------------------------------------------
 //

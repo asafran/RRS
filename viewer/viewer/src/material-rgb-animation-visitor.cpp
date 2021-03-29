@@ -1,7 +1,7 @@
 #include    "material-rgb-animation-visitor.h"
 #include    "material-rgb-animation.h"
 
-#include    <osg/Material>
+//#include    <osg/Material>
 
 MaterialRGBAnimationVisitor::MaterialRGBAnimationVisitor(animations_t *animations,
                                                          ConfigReader *cfg)

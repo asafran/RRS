@@ -1,7 +1,7 @@
 #ifndef     VEHICLE_EXTERIOR_H
 #define     VEHICLE_EXTERIOR_H
 
-#include    <osg/MatrixTransform>
+//#include    <osg/MatrixTransform>
 #include    "animations-list.h"
 #include    "display-container.h"
 

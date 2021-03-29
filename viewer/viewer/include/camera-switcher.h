@@ -1,7 +1,7 @@
 #ifndef     CAMERA_SWITCHER_H
 #define     CAMERA_SWITCHER_H
 
-#include    <osgGA/KeySwitchMatrixManipulator>
+//#include    <osgGA/KeySwitchMatrixManipulator>
 
 //------------------------------------------------------------------------------
 //

@@ -3,7 +3,7 @@
 
 #include    "display-container.h"
 
-#include    <osg/Node>
+//#include    <osg/Node>
 
 void loadDisplayModule(const display_config_t &display_config,
                         display_container_t *dc,

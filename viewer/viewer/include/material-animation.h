@@ -3,8 +3,8 @@
 
 #include    "proc-animation.h"
 
-#include    <osg/Material>
-#include    <osg/StateSet>
+//#include    <osg/Material>
+//#include    <osg/StateSet>
 
 //------------------------------------------------------------------------------
 //

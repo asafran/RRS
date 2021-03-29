@@ -14,20 +14,29 @@
 
 #include    "viewer.h"
 
-#include    <osg/BlendFunc>
-#include    <osg/CullFace>
-#include    <osg/GraphicsContext>
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
-#include    <osgViewer/ViewerEventHandlers>
-#include    <osg/LightModel>
-#include    <osgViewer/View>
+//#include    <osg/BlendFunc>
+//#include    <osg/CullFace>
+//#include    <osg/GraphicsContext>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
+//#include    <osgViewer/ViewerEventHandlers>
+//#include    <osg/LightModel>
+//#include    <osgViewer/View>
+
+#include    <vsgXchange/all.h>
+#include    <vsg/utils/CommandLine.h>
+#include    <vsg/viewer/Viewer.h>
+#include    <vsg/utils/CommandLine.h>
+#include    <vsg/utils/CommandLine.h>
+#include    <vsg/utils/CommandLine.h>
+
 
 #include    "filesystem.h"
 #include    "config-reader.h"
 
 #include    <sstream>
 #include    <fstream>
+
 
 #include    "notify.h"
 #include    "abstract-loader.h"
@@ -42,7 +51,7 @@
 #include    "camera-switcher.h"
 
 #include    <QObject>
-
+#include    <iostream>
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -134,6 +143,7 @@ int RouteViewer::run()
 //------------------------------------------------------------------------------
 bool RouteViewer::init(int argc, char *argv[])
 {
+/*
     FileSystem &fs = FileSystem::getInstance();
 
     // Read settings from config file
@@ -175,9 +185,6 @@ bool RouteViewer::init(int argc, char *argv[])
     if (!initDisplay(&viewer, settings))
         return false;
 
-    // Init motion blur
-    /*if (!initMotionBlurEffect(&viewer, settings))
-        return false;*/
 
     osg::ref_ptr<osgViewer::ScreenCaptureHandler::CaptureOperation> writeFile =
             new WriteToFileOperation(fs.getScreenshotsDir());
@@ -199,14 +206,80 @@ bool RouteViewer::init(int argc, char *argv[])
     osgDB::DatabasePager *dp = viewer.getDatabasePager();
     dp->setDoPreCompile(true);
     dp->setTargetMaximumNumberOfPageLOD(1000);
+*/
 
+    // set up defaults and read command line arguments to override them
+
+    auto options = vsg::Options::create();
+    options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
+
+    options->add(vsgXchange::all::create());
+
+    auto windowTraits = vsg::WindowTraits::create();
+    windowTraits->windowTitle = "RRS";
+
+    FileSystem &fs = FileSystem::getInstance();
+
+    // Read settings from config file
+    settings = loadSettings(fs.getConfigDir() + fs.separator() + "settings.xml", windowTraits);
+
+
+    // set up defaults and read command line arguments to override them
+    vsg::CommandLine arguments(&argc, argv);
+    arguments.read(options);
+    windowTraits->debugLayer = arguments.read({"--debug", "-d"});
+    windowTraits->apiDumpLayer = arguments.read({"--api", "-a"});
+    if (arguments.read("--double-buffer")) windowTraits->swapchainPreferences.imageCount = 2;
+    if (arguments.read("--triple-buffer")) windowTraits->swapchainPreferences.imageCount = 3; // default
+    if (arguments.read("--IMMEDIATE")) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+    if (arguments.read("--FIFO")) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    if (arguments.read("--FIFO_RELAXED")) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    if (arguments.read("--MAILBOX")) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+
+    if (arguments.read({"--fullscreen", "--fs"})) windowTraits->fullscreen = true;
+    if (arguments.read({"--window", "-w"}, windowTraits->width, windowTraits->height)) { windowTraits->fullscreen = false; }
+    if (arguments.read({"--no-frame", "--nf"})) windowTraits->decoration = false;
+    if (arguments.read("--or")) windowTraits->overrideRedirect = true;
+    if (arguments.read("--d32")) windowTraits->depthFormat = VK_FORMAT_D32_SFLOAT;
+    arguments.read("--screen", windowTraits->screenNum);
+    arguments.read("--display", windowTraits->display);
+    arguments.read("--samples", windowTraits->samples);
+/*
+    auto numFrames = arguments.value(-1, "-f");
+    auto pathFilename = arguments.value(std::string(), "-p");
+    auto loadLevels = arguments.value(0, "--load-levels");
+    auto horizonMountainHeight = arguments.value(0.0, "--hmh");
+    auto skyboxFilename = arguments.value(vsg::Path(), "--skybox");
+    auto outputFilename = arguments.value(vsg::Path(), "-o");
+*/
+//    if (arguments.errors()) return arguments.writeErrorMessages(std::cerr);
+
+    auto routeFilename = arguments.value(vsg::Path(), "--route");
+
+    // Load selected route
+    if (!loadRoute(routeFilename))
+    {
+        std::cout << "Route from " << routeFilename << " is't loaded" << std::endl;
+        return false;
+    }
+
+    // Init graphical engine settings
+    if (!initEngineSettings(root.get()))
+        return false;
+
+    // Init display settings
+    if (!initDisplay(&viewer, settings))
+        return false;
+
+
+    auto group = vsg::Group::create();
     return true;
 }
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-settings_t RouteViewer::loadSettings(const std::string &cfg_path) const
+settings_t RouteViewer::loadSettings(const std::string &cfg_path, vsg::ref_ptr<vsg::WindowTraits> windowTraits) const
 {
     settings_t settings;
 
@@ -268,6 +341,26 @@ settings_t RouteViewer::loadSettings(const std::string &cfg_path) const
         cfg.getValue(secName, "StatCamDist", settings.stat_cam_dist);
         cfg.getValue(secName, "StatCamHeight", settings.stat_cam_height);
         cfg.getValue(secName, "StatCamShift", settings.stat_cam_shift);
+
+        if (settings.double_buffer) windowTraits->swapchainPreferences.imageCount = 2;
+        else windowTraits->swapchainPreferences.imageCount = 3; // default
+        if (!settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        if (settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+        //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+
+        if (settings.fullscreen) windowTraits->fullscreen = true;
+        else {
+            windowTraits->width = settings.width;
+            windowTraits->height = settings.height;
+            windowTraits->fullscreen = false;
+        }
+
+        if (!settings.window_decoration) windowTraits->decoration = false;
+        //windowTraits->depthFormat = VK_FORMAT_D32_SFLOAT;
+        windowTraits->screenNum = settings.screen_number;
+        windowTraits->display = settings.screen_number;
+        windowTraits->samples = settings.samples;
     }
 
     return settings;
@@ -310,7 +403,7 @@ void RouteViewer::overrideSettingsByCommandLine(const cmd_line_t &cmd_line,
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool RouteViewer::loadRoute(const std::string &routeDir)
+bool RouteViewer::loadRoute(const vsg::Path &routeDir)
 {
     if (routeDir.empty())
     {

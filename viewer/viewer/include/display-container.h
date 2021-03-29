@@ -3,8 +3,8 @@
 
 #include    "QWidgetImage.h"
 
-#include    <osgViewer/ViewerEventHandlers>
-#include    <osg/Texture2D>
+//#include    <osgViewer/ViewerEventHandlers>
+//#include    <osg/Texture2D>
 
 #include    "display.h"
 #include    "display-config.h"

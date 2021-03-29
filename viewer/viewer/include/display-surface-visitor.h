@@ -3,8 +3,8 @@
 
 #include    "display-container.h"
 
-#include    <osg/Geode>
-#include    <osg/NodeVisitor>
+//#include    <osg/Geode>
+//#include    <osg/NodeVisitor>
 #include    "QWidgetImage.h"
 #include    <QString>
 

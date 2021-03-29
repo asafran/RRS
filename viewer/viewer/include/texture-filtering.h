@@ -8,10 +8,10 @@
 #ifndef     TEXTURE_FILTERING_H
 #define     TEXTURE_FILTERING_H
 
-#include    <osg/NodeVisitor>
-#include    <osg/Drawable>
-#include    <osg/Geode>
-#include    <osg/Texture2D>
+//#include    <osg/NodeVisitor>
+//#include    <osg/Drawable>
+//#include    <osg/Geode>
+//#include    <osg/Texture2D>
 
 //------------------------------------------------------------------------------
 //

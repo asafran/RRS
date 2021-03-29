@@ -15,9 +15,9 @@
 #ifndef     TEXTURE_LOADER_H
 #define     TEXTURE_LOADER_H
 
-#include    <osg/NodeCallback>
-#include    <osg/PagedLOD>
-#include    <osg/Texture2D>
+//#include    <osg/NodeCallback>
+//#include    <osg/PagedLOD>
+//#include    <osg/Texture2D>
 
 #include    "model-loader.h"
 

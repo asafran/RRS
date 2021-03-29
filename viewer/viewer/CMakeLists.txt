@@ -7,7 +7,11 @@ find_package(Qt5 COMPONENTS OpenGL REQUIRED)
 
 add_executable(viewer ${SOURCES})
 
-target_link_libraries(viewer ${OPENSCENEGRAPH_LIBRARIES})
+#target_link_libraries(viewer ${OPENSCENEGRAPH_LIBRARIES})
+
+target_link_libraries(viewer vsg::vsg)
+
+target_link_libraries(viewer vsgXchange::vsgXchange)
 
 #target_link_libraries(viewer ${OSG_QT_LIB})
 

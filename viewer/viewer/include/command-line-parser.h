@@ -15,7 +15,7 @@
 #ifndef     COMMAND_LINE_PARSER_H
 #define     COMMAND_LINE_PARSER_H
 
-#include    <osg/ArgumentParser>
+//#include    <osg/ArgumentParser>
 
 #include    <sstream>
 

@@ -27,6 +27,7 @@
 #include    "vehicle-signals.h"
 #include    "control-signals.h"
 #include    "feedback-signals.h"
+#include    "vehicle-data.h"
 
 #include    "alsn-struct.h"
 
@@ -39,7 +40,7 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-class VEHICLE_EXPORT Vehicle : public QObject
+class VEHICLE_EXPORT Vehicle : public QObject, public VehicleData
 {
     Q_OBJECT
 
@@ -106,14 +107,6 @@ public:
 
     /// Get wheel diameter
     double getWheelDiameter() const;
-
-    double getRailwayCoord() const;
-
-    double getVelocity() const;
-
-    double getWheelAngle(size_t i);
-
-    double getWheelOmega(size_t i);
 
     bool getDiscreteSignal(size_t i);
 
@@ -231,10 +224,6 @@ protected:
 
     /// Init railway coordinate
     double railway_coord0;
-    /// Railway coordinate
-    double railway_coord;
-    /// Body velocity
-    double velocity;
 
     double  b0;
     double  b1;
@@ -270,11 +259,6 @@ protected:
     /// Род тока в КС
     int         current_kind;
 
-    /// Wheels rotation angles
-    std::vector<double> wheel_rotation_angle;
-    /// Wheels angular velocities
-    std::vector<double> wheel_omega;
-
     /// Active common forces
     state_vector_t  Q_a;
     /// Reactive common forces
@@ -282,18 +266,15 @@ protected:
     /// Vehicle common acceleration
     state_vector_t  a;
 
-    /// Keyboard state
-    QMap<int, bool> keys;
-    QMutex          keys_mutex;    
 
     /// Discrete signals for outpput
-    std::array<bool, MAX_DISCRETE_SIGNALS>  discreteSignal;
+//    std::array<bool, MAX_DISCRETE_SIGNALS>  discreteSignal;
     /// Analog signals for output
-    std::array<float, MAX_ANALOG_SIGNALS>   analogSignal;
+//    std::array<float, MAX_ANALOG_SIGNALS>   analogSignal;
 
-    control_signals_t   control_signals;
+//    control_signals_t   control_signals;
 
-    feedback_signals_t  feedback_signals;
+//    feedback_signals_t  feedback_signals;
 
     /// Линии управления ЭПТ
     std::vector<double> ept_control;

@@ -22,7 +22,7 @@
 
 #include    <QTimer>
 #include    <QSharedMemory>
-#include    <osgViewer/Viewer>
+//#include    <osgViewer/Viewer>
 
 //------------------------------------------------------------------------------
 //

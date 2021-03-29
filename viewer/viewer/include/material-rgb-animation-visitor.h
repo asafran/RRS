@@ -1,7 +1,7 @@
 #ifndef     MATERIAL_RGB_ANIMATION_VISITOR_H
 #define     MATERIAL_RGB_ANIMATION_VISITOR_H
 
-#include    <osg/NodeVisitor>
+//#include    <osg/NodeVisitor>
 #include    "animations-list.h"
 
 class MaterialRGBAnimationVisitor : public osg::NodeVisitor

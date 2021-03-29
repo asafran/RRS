@@ -1,6 +1,6 @@
 #include    "texture-filtering.h"
 
-#include    <osg/Material>
+//#include    <osg/Material>
 
 
 ModelTextureFilter::ModelTextureFilter()

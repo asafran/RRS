@@ -15,8 +15,8 @@
 #ifndef		LIGHTING_H
 #define		LIGHTING_H
 
-#include    <osg/Light>
-#include    <osg/LightSource>
+//#include    <osg/Light>
+//#include    <osg/LightSource>
 
 /*!
  * \fn

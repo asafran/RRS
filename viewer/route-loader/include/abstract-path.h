@@ -8,8 +8,8 @@
 #ifndef     ABSTRACT_PATH_H
 #define     ABSTRACT_PATH_H
 
-#include    <osg/Referenced>
-#include    <osg/Geometry>
+//#include    <osg/Referenced>
+//#include    <osg/Geometry>
 
 #include    "import-export.h"
 #include    "basis.h"

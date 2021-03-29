@@ -2,7 +2,7 @@
 
 #include    "cyrilic-keys.h"
 
-#include    <osgGA/GUIEventAdapter>
+//#include    <osgGA/GUIEventAdapter>
 
 //------------------------------------------------------------------------------
 //

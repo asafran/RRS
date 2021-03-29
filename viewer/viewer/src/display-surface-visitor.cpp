@@ -1,9 +1,9 @@
 #include    "display-surface-visitor.h"
 
 #include    "QWidgetImage.h"
-#include    <osgViewer/ViewerEventHandlers>
-#include    <osg/Material>
-#include    <osg/Texture2D>
+//#include    <osgViewer/ViewerEventHandlers>
+//#include    <osg/Material>
+//#include    <osg/Texture2D>
 
 DisplaySurfaceVisitor::DisplaySurfaceVisitor(display_container_t *dc, display_config_t display_config)
     : osg::NodeVisitor()

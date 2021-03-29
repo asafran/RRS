@@ -1,6 +1,6 @@
 #include    "animation-manager.h"
 
-#include    <osgViewer/Viewer>
+//#include    <osgViewer/Viewer>
 
 //------------------------------------------------------------------------------
 //

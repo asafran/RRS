@@ -1,5 +1,5 @@
 #include    "abstract-manipulator.h"
-#include    <osgViewer/Viewer>
+//#include    <osgViewer/Viewer>
 
 //------------------------------------------------------------------------------
 //

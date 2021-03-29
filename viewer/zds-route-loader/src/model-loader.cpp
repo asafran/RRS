@@ -13,19 +13,19 @@
 
 #include    "model-loader.h"
 
-#include    <osg/Texture2D>
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
-#include    <osgDB/ImageOptions>
+//#include    <osg/Texture2D>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
+//#include    <osgDB/ImageOptions>
 
 #include    "texture-loader.h"
 #include    "texture-func.h"
 
-#include    <osg/BlendFunc>
-#include    <osg/AlphaFunc>
-#include    <osg/CullFace>
+//#include    <osg/BlendFunc>
+//#include    <osg/AlphaFunc>
+//#include    <osg/CullFace>
 
-#include    <osgDB/WriteFile>
+//#include    <osgDB/WriteFile>
 
 //------------------------------------------------------------------------------
 //

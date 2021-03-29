@@ -1,10 +1,10 @@
 #ifndef     SCREEN_CAPTURE_H
 #define     SCREEN_CAPTURE_H
 
-#include    <osgViewer/Viewer>
-#include    <osgViewer/ViewerEventHandlers>
-#include    <osgDB/WriteFile>
-#include    <osgGA/GUIEventHandler>
+//#include    <osgViewer/Viewer>
+//#include    <osgViewer/ViewerEventHandlers>
+//#include    <osgDB/WriteFile>
+//#include    <osgGA/GUIEventHandler>
 
 #include    <QDir>
 #include    <QDateTime>

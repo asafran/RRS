@@ -13,6 +13,7 @@
  */
 
 #include    "abstract-loader.h"
+#include    <vsg/nodes/Group.h>
 
 #include    "library.h"
 
@@ -21,7 +22,7 @@
 //------------------------------------------------------------------------------
 RouteLoader::RouteLoader()
     : routeDir("")
-    , root(new osg::Group)
+    , root(new vsg::Group)
 {
 
 }
@@ -29,7 +30,7 @@ RouteLoader::RouteLoader()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-osg::Group *RouteLoader::getRoot()
+vsg::Group *RouteLoader::getRoot()
 {
     if (root.valid())
         return root.release();
@@ -42,7 +43,7 @@ osg::Group *RouteLoader::getRoot()
 //------------------------------------------------------------------------------
 RouteLoader *loadRouteLoader(const std::string &path, const std::string &name)
 {
-    RouteLoader *loader = nullptr;
+    vsg::ref_ptr<RouteLoader> loader;
 
     Library lib(path, name);
 
@@ -56,5 +57,5 @@ RouteLoader *loadRouteLoader(const std::string &path, const std::string &name)
         }
     }
 
-    return loader;
+    return loader.release();
 }

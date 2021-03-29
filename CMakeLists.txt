@@ -35,7 +35,15 @@ add_custom_target(clobber
 
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS ON)
 
-find_package(OpenSceneGraph COMPONENTS osgUtil osgDB osgText osgGA osgFX osgSim osgViewer REQUIRED)
+find_package(vsg REQUIRED)
+
+# find the optional vsgXchange that can be used for reading and range of image and 3d model formats and shader compilation
+find_package(vsgXchange REQUIRED)
+
+# find the optional vsgImGui that can be used for GUI elements added into graphics window.
+find_package(vsgImGui REQUIRED)
+
+#find_package(OpenSceneGraph COMPONENTS osgUtil osgDB osgText osgGA osgFX osgSim osgViewer REQUIRED)
 #find_library(OSG_QT_LIB osgQOpenGL REQUIRED)
 
 

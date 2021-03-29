@@ -3,7 +3,7 @@
 
 #include    <QMetaType>
 
-#include    <osg/Vec3>
+//#include    <osg/Vec3>
 
 #include    "basis.h"
 

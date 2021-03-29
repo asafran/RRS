@@ -14,11 +14,11 @@
 #ifndef     MODEL_LOADER_H
 #define     MODEL_LOADER_H
 
-#include    <osg/PagedLOD>
-#include    <osg/ProxyNode>
-#include    <osgDB/ReadFile>
+//#include    <osg/PagedLOD>
+//#include    <osg/ProxyNode>
+//#include    <osgDB/ReadFile>
 
-#include    <osg/Texture2D>
+//#include    <osg/Texture2D>
 
 /*!
  * \struct

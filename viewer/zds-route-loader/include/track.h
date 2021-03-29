@@ -17,7 +17,7 @@
 #include    <string>
 #include    <vector>
 
-#include    <osg/Geometry>
+//#include    <osg/Geometry>
 
 /*!
  * \struct

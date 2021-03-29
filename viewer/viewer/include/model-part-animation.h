@@ -1,8 +1,8 @@
 #ifndef     MODEL_PART_ANIMATION_H
 #define     MODEL_PART_ANIMATION_H
 
-#include    <osg/MatrixTransform>
-#include    <osg/AnimationPath>
+//#include    <osg/MatrixTransform>
+//#include    <osg/AnimationPath>
 
 
 

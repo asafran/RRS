@@ -1,7 +1,7 @@
 #include    "file-funcs.h"
 
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
 #include    <vector>
 
 //------------------------------------------------------------------------------

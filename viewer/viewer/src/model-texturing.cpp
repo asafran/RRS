@@ -1,8 +1,8 @@
 #include    "model-texturing.h"
 #include    "filesystem.h"
 
-#include    <osg/Geode>
-#include    <osgDB/ReadFile>
+//#include    <osg/Geode>
+//#include    <osgDB/ReadFile>
 #include    <QFileInfo>
 
 //------------------------------------------------------------------------------

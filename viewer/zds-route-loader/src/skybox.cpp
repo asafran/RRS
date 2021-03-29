@@ -1,15 +1,15 @@
 #include    "skybox.h"
 
-#include    <osg/Depth>
-#include    <osg/TextureCubeMap>
-#include    <osgUtil/CullVisitor>
-#include    <osgDB/ReadFile>
-#include    <osgDB/FileUtils>
-#include    <osg/Geode>
-#include    <osg/ShapeDrawable>
-#include    <osg/TexGen>
-#include    <osg/Texture2D>
-#include    <osg/Material>
+//#include    <osg/Depth>
+//#include    <osg/TextureCubeMap>
+//#include    <osgUtil/CullVisitor>
+//#include    <osgDB/ReadFile>
+//#include    <osgDB/FileUtils>
+//#include    <osg/Geode>
+//#include    <osg/ShapeDrawable>
+//#include    <osg/TexGen>
+//#include    <osg/Texture2D>
+//#include    <osg/Material>
 
 #include    "filesystem.h"
 

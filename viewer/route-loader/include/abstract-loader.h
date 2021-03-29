@@ -15,9 +15,10 @@
 #ifndef		ABSTRACT_LOADER_H
 #define		ABSTRACT_LOADER_H
 
-#include    <osg/Referenced>
-#include    <osg/Group>
-#include    <osgGA/GUIEventHandler>
+//#include    <osg/Referenced>
+//#include    <osg/Group>
+//#include    <osgGA/GUIEventHandler>
+#include    <vsg/core/Inherit.h>
 
 #include    "import-export.h"
 
@@ -43,7 +44,7 @@ enum ReadResult
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-class ROUTE_LOADER_EXPORT RouteLoader : public osg::Referenced
+class ROUTE_LOADER_EXPORT RouteLoader : public vsg::Inherit<vsg::Object, RouteLoader>
 {
 public:
 
@@ -54,7 +55,7 @@ public:
     virtual void load(std::string routeDir, float view_dist = 1000.0f) = 0;
 
     /// Get route scene group node
-    virtual osg::Group *getRoot();        
+    virtual vsg::Group *getRoot();
 
     virtual MotionPath *getMotionPath(int direction) = 0;
 
@@ -64,7 +65,7 @@ protected:
     std::string routeDir;
 
     /// Route static scene root node
-    osg::ref_ptr<osg::Group>    root;        
+    vsg::ref_ptr<vsg::Group>    root;
 
     /// Destructor
     virtual ~RouteLoader() {}
@@ -90,7 +91,7 @@ typedef RouteLoader* (*GetRouteLoader)();
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-extern "C" DECL_EXPORT RouteLoader *loadRouteLoader(const std::string &path,
+extern "C" DECL_EXPORT vsg::ref_ptr<RouteLoader> loadRouteLoader(const std::string &path,
                                                     const std::string &name);
 
 #endif

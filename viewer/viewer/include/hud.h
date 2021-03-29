@@ -1,11 +1,11 @@
 #ifndef     HUD_H
 #define     HUD_H
 
-#include    <osg/Camera>
-#include    <osg/Switch>
-#include    <osgText/Text>
-#include    <osgViewer/View>
-#include    <osgGA/GUIEventHandler>
+//#include    <osg/Camera>
+//#include    <osg/Switch>
+//#include    <osgText/Text>
+//#include    <osgViewer/View>
+//#include    <osgGA/GUIEventHandler>
 
 #include    <QObject>
 

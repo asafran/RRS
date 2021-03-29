@@ -1,7 +1,7 @@
 #include    "rails-manipulator.h"
 #include    "math-funcs.h"
 
-#include    <osgViewer/Viewer>
+//#include    <osgViewer/Viewer>
 
 //------------------------------------------------------------------------------
 //

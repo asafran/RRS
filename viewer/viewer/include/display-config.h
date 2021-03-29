@@ -2,7 +2,7 @@
 #define     DISPLAY_CONFIG_H
 
 #include    <QString>
-#include    <osg/Geometry>
+//#include    <osg/Geometry>
 
 struct      display_config_t
 {

@@ -20,8 +20,8 @@
 #include    <vector>
 #include    <fstream>
 
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
 
 #include    "abstract-loader.h"
 

@@ -1,8 +1,8 @@
 #ifndef     DMD_MESH_H
 #define     DMD_MESH_H
 
-#include    <osg/Array>
-#include    <osg/Drawable>
+//#include    <osg/Array>
+//#include    <osg/Drawable>
 
 typedef  std::vector<unsigned int> face_t;
 

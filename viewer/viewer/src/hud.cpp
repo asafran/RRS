@@ -1,7 +1,7 @@
 #include    "hud.h"
 #include    "filesystem.h"
 
-#include    <osg/Geode>
+//#include    <osg/Geode>
 
 #include    <iostream>
 

@@ -18,13 +18,13 @@
 #include    <QObject>
 #include    <QSharedMemory>
 
-#include    <osgGA/GUIEventHandler>
-#include    <osg/MatrixTransform>
+//#include    <osgGA/GUIEventHandler>
+//#include    <osg/MatrixTransform>
 
 #include    "abstract-path.h"
 #include    "trajectory-element.h"
 
-#include    <osgViewer/Viewer>
+//#include    <osgViewer/Viewer>
 
 #include    "vehicle-exterior.h"
 #include    "animation-manager.h"
@@ -93,9 +93,9 @@ private:
     std::vector<vehicle_exterior_t> vehicles_ext;
 
     /// Data, received from server
-    network_data_t  nd;    
+//    network_data_t  nd;
 
-    QSharedMemory   shared_memory;
+//    QSharedMemory   shared_memory;
 
     /// Animations list
     std::vector<AnimationManager *> anim_managers;

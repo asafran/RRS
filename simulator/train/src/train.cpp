@@ -72,7 +72,7 @@ bool Train::init(const init_data_t &init_data)
 
     } catch (const std::bad_alloc &)
     {
-        Journal::instance()->error("Sound mamager is;t created");
+        Journal::instance()->error("Sound manager is;t created");
     }
 
     // Loading of train

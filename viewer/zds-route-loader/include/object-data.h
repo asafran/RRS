@@ -3,9 +3,9 @@
 
 #include    <string>
 
-#include    <osg/Geometry>
-#include    <osg/PagedLOD>
-#include    <osg/ProxyNode>
+//#include    <osg/Geometry>
+//#include    <osg/PagedLOD>
+//#include    <osg/ProxyNode>
 
 //------------------------------------------------------------------------------
 //

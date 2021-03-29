@@ -18,7 +18,7 @@
 #include    <QObject>
 #include    <QMap>
 #include    <QSharedMemory>
-#include    <osgGA/GUIEventHandler>
+//#include    <osgGA/GUIEventHandler>
 
 /*!
  * \class

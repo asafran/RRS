@@ -17,16 +17,16 @@
 #include    "config-reader.h"
 #include    "filesystem.h"
 
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
-#include    <osgDB/ReadFile>
-#include    <osg/Texture2D>
-#include    <osg/Material>
-#include    <osgUtil/SmoothingVisitor>
-#include    <osg/Depth>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
+//#include    <osgDB/ReadFile>
+//#include    <osg/Texture2D>
+//#include    <osg/Material>
+//#include    <osgUtil/SmoothingVisitor>
+//#include    <osg/Depth>
 
-#include    <osg/BlendFunc>
-#include    <osg/AlphaFunc>
+//#include    <osg/BlendFunc>
+//#include    <osg/AlphaFunc>
 
 #include    "model-smooth.h"
 #include    "texture-filtering.h"

@@ -15,7 +15,7 @@
 #ifndef     NOTIFY_H
 #define     NOTIFY_H
 
-#include    <osg/Notify>
+//#include    <osg/Notify>
 #include    <fstream>
 
 /*!

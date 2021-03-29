@@ -15,7 +15,7 @@
 #ifndef     VIEWER_H
 #define     VIEWER_H
 
-#include    <osgViewer/Viewer>
+#include    <vsg/viewer/Viewer.h>
 
 #include    "settings.h"
 #include    "command-line-parser.h"
@@ -54,13 +54,12 @@ protected:
     /// Viewer settings
     settings_t                  settings;
 
-    /// OSG viewer object
-    osgViewer::Viewer           viewer;
+    /// VSG viewer object
+    vsg::Viewer           viewer;
 
     /// OSG scene root node
-    osg::ref_ptr<osg::Group>    root;
+    vsg::ref_ptr<vsg::Group>    root;
 
-    NetworkClient               client;
 
 
     TrainExteriorHandler *train_ext_handler;

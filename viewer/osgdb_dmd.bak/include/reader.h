@@ -7,12 +7,12 @@
 #ifndef     READER_H
 #define     READER_H
 
-#include    <osg/Geometry>
-#include    <osg/Geode>
-#include    <osgDB/FileUtils>
-#include    <osgDB/FileNameUtils>
-#include    <osgDB/Registry>
-#include    <osgUtil/SmoothingVisitor>
+//#include    <osg/Geometry>
+//#include    <osg/Geode>
+//#include    <osgDB/FileUtils>
+//#include    <osgDB/FileNameUtils>
+//#include    <osgDB/Registry>
+//#include    <osgUtil/SmoothingVisitor>
 
 //------------------------------------------------------------------------------
 //

@@ -1,7 +1,7 @@
 #ifndef     ANIMATION_PATH_CALLBACK_H
 #define     ANIMATION_PATH_CALLBACK_H
 
-#include    <osg/AnimationPath>
+//#include    <osg/AnimationPath>
 
 class AnimationPathCallback : public osg::AnimationPathCallback
 {

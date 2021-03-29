@@ -3,7 +3,7 @@
 
 #include    <QObject>
 
-#include    <osgGA/TrackballManipulator>
+//#include    <osgGA/TrackballManipulator>
 
 #include    "camera-position.h"
 

@@ -1,7 +1,7 @@
 #ifndef     MODEL_ANIMATION_VISITOR_H
 #define     MODEL_ANIMATION_VISITOR_H
 
-#include    <osg/NodeVisitor>
+//#include    <osg/NodeVisitor>
 #include    "model-parts-list.h"
 
 class ModelAnimationVisitor : public osg::NodeVisitor

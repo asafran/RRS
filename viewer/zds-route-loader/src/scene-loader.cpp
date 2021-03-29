@@ -18,7 +18,7 @@
 
 #include    <sstream>
 
-#include    <osg/MatrixTransform>
+//#include    <osg/MatrixTransform>
 
 #include    "filesystem.h"
 

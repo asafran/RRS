@@ -1,6 +1,6 @@
 #include    "display-loader.h"
 
-#include    <osg/Notify>
+//#include    <osg/Notify>
 
 #include    "display.h"
 #include    "display-visitor.h"

@@ -1,11 +1,11 @@
 #ifndef     MODEL_SMOOTH_H
 #define     MODEL_SMOOTH_H
 
-#include    <osg/NodeVisitor>
-#include    <osg/Drawable>
-#include    <osg/Geode>
-#include    <osg/Geometry>
-#include    <osgUtil/SmoothingVisitor>
+//#include    <osg/NodeVisitor>
+//#include    <osg/Drawable>
+//#include    <osg/Geode>
+//#include    <osg/Geometry>
+//#include    <osgUtil/SmoothingVisitor>
 
 //------------------------------------------------------------------------------
 //

@@ -1,7 +1,7 @@
 #include    "material-animation-visitor.h"
 #include    "material-animation.h"
 
-#include    <osg/Material>
+//#include    <osg/Material>
 
 MaterialAnimationVisitor::MaterialAnimationVisitor(animations_t *animations, ConfigReader *cfg)
     : osg::NodeVisitor()

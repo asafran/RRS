@@ -1,6 +1,6 @@
 #include    "keys-translator.h"
 
-#include    <osgGA/GUIEventAdapter>
+//#include    <osgGA/GUIEventAdapter>
 
 //------------------------------------------------------------------------------
 //

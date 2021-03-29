@@ -7,8 +7,8 @@
 #ifndef     MODEL_TEXTURING_H
 #define     MODEL_TEXTURING_H
 
-#include    <osg/NodeVisitor>
-#include    <osg/Texture2D>
+//#include    <osg/NodeVisitor>
+//#include    <osg/Texture2D>
 
 //------------------------------------------------------------------------------
 //

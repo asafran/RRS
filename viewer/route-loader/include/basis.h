@@ -1,7 +1,7 @@
 #ifndef     BASIS_H
 #define     BASIS_H
 
-#include    <osg/Vec3>
+//#include    <osg/Vec3>
 
 struct basis_t
 {

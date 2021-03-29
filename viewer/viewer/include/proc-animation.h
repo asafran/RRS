@@ -1,7 +1,7 @@
 #ifndef     PROC_ANIMATION_H
 #define     PROC_ANIMATION_H
 
-#include    <osg/MatrixTransform>
+//#include    <osg/MatrixTransform>
 #include    "math-funcs.h"
 #include    "config-reader.h"
 #include    <sstream>

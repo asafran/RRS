@@ -15,7 +15,7 @@
 #ifndef     VEHICLE_LOADER_H
 #define     VEHICLE_LOADER_H
 
-#include    <osg/MatrixTransform>
+//#include    <osg/MatrixTransform>
 
 #include    "vehicle-exterior.h"
 

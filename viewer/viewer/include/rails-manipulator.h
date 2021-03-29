@@ -3,7 +3,7 @@
 
 #include    <QObject>
 
-#include    <osgGA/TrackballManipulator>
+//#include    <osgGA/TrackballManipulator>
 
 #include    "abstract-manipulator.h"
 #include    "settings.h"

@@ -1,8 +1,8 @@
 #ifndef     ABSTRACT_TRAJECTORY_H
 #define     ABSTRACT_TRAJECTORY_H
 
-#include    <osg/Referenced>
-#include    <osg/Geometry>
+//#include    <osg/Referenced>
+//#include    <osg/Geometry>
 #include    "trajectory-element.h"
 #include    "abstract-path.h"
 

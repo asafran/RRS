@@ -1,8 +1,8 @@
 #ifndef     DISPLAY_VISITOR_H
 #define     DISPLAY_VISITOR_H
 
-#include    <osg/Transform>
-#include    <osg/NodeVisitor>
+//#include    <osg/Transform>
+//#include    <osg/NodeVisitor>
 #include    <QString>
 
 #include    "display-container.h"

@@ -17,7 +17,7 @@
 
 #include    <string>
 
-#include    <osg/Vec3>
+//#include    <osg/Vec3>
 
 /*!
  * \struct
