@@ -109,12 +109,12 @@ public:
     /// Get wheel diameter
     double getWheelDiameter() const;
 
-    bool getDiscreteSignal(size_t i);
+//    bool getDiscreteSignal(size_t i);
 
-    float getAnalogSignal(size_t i);
+//    float getAnalogSignal(size_t i);
 
-    std::array<bool, MAX_DISCRETE_SIGNALS> getDiscreteSignals();
-    std::array<float, MAX_ANALOG_SIGNALS> getAnalogSignals();
+//    std::array<bool, MAX_DISCRETE_SIGNALS> getDiscreteSignals();
+//    std::array<float, MAX_ANALOG_SIGNALS> getAnalogSignals();
 
     /// Common acceleration calculation
     virtual state_vector_t getAcceleration(state_vector_t &Y, double t);
@@ -167,7 +167,7 @@ public:
 
 public slots:
     
-    void receiveData(QByteArray data);
+//    void receiveData(QByteArray data);
 
     void getControlSignals(control_signals_t control_signals);
 
@@ -214,12 +214,12 @@ protected:
     double  wheel_diameter;
     /// Wheel radius
     double  rk;
-
+/*
     /// Forward coupling force
     double  R1;
     /// Backward coupling force
     double  R2;
-
+*/
     /// Number of degrees of freedom
     size_t  s;
 
@@ -259,23 +259,23 @@ protected:
 
     /// Род тока в КС
     int         current_kind;
-
+/*
     /// Active common forces
     state_vector_t  Q_a;
     /// Reactive common forces
     state_vector_t  Q_r;
     /// Vehicle common acceleration
     state_vector_t  a;
-
+*/
 
     /// Discrete signals for outpput
 //    std::array<bool, MAX_DISCRETE_SIGNALS>  discreteSignal;
     /// Analog signals for output
 //    std::array<float, MAX_ANALOG_SIGNALS>   analogSignal;
 
-//    control_signals_t   control_signals;
+    control_signals_t   control_signals;
 
-//    feedback_signals_t  feedback_signals;
+    feedback_signals_t  feedback_signals;
 
     /// Линии управления ЭПТ
     std::vector<double> ept_control;
@@ -309,7 +309,7 @@ protected:
     virtual void hardwareOutput();
 
     /* Modkeys extended functions */
-
+/*
     bool isShift() const;
 
     bool isControl() const;
@@ -317,7 +317,7 @@ protected:
     bool isAlt() const;
 
     bool getKeyState(int key) const;
-
+*/
 private:
 
     /// Default configuration load

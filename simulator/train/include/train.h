@@ -51,6 +51,9 @@ public:
 
     /// Constructor
     explicit Train(Profile *profile, time_controls_t controls, QObject *parent = Q_NULLPTR);
+
+    explicit Train(const Train *train, size_t decouple, QObject *parent = Q_NULLPTR);
+
     /// Destructor
     virtual ~Train();
 
@@ -89,18 +92,23 @@ public:
 
     size_t getVehiclesNumber() const;
 
-    QString getClientName();
+//    QString getClientName();
 
-    QString getTrainID();
+//    QString getTrainID();
 
     int getDirection() const;
 
-    std::vector<Vehicle *> *getVehicles();
+    QVarLengthArray<Vehicle *> *getVehicles();
 
 signals:
 
     void logMessage(QString msg);
-    void sendDataToVehicle(QByteArray data);
+//    void sendDataToVehicle(QByteArray data);
+    void posDataReady(QVarLengthArray<VehicleData> send_datacopy);
+
+public slots:
+
+    void process();
 
 private:    
 
@@ -137,18 +145,18 @@ private:
     SoundManager *soundMan;
 
     /// Имя сетевого клиента для ВЖД
-    QString     client_name;
+//    QString     client_name;
 
     /// Идентификатор поезда для ВЖД
-    QString     train_id;
+//    QString     train_id;
 
     time_controls_t time_controls;
 
     /// All train's vehicles
-    std::vector<Vehicle *> vehicles;
+    QVarLengthArray<Vehicle *> vehicles;
 
     /// All train's couplings
-    std::vector<Coupling *> couplings;
+    QVarLengthArray<Coupling *> couplings;
 
     /// Solver's configuration
     solver_config_t solver_config;
@@ -158,13 +166,15 @@ private:
     /// Couplings loading
     bool loadCouplings(QString cfg_path);
 
+    void topologyStep();
+
     /// Set initial conditions
     void setInitConditions(const init_data_t &init_data);
 
     /// Initialization of vehicles brakes
     void initVehiclesBrakes();
 
-    void timerEvent(QTimerEvent *event) override;
+//    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // TRAIN_H

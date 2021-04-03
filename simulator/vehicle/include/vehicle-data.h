@@ -10,9 +10,9 @@ class VehicleData : public VehicleController
 public:
     VehicleData();
 
-    double getRailwayCoord() const;
+    double getRailwayCoord() const { return railway_coord; }
 
-    double getVelocity() const;
+    double getVelocity()  const { return velocity; }
 
     double getFwdCouplingForce() const { return R1; }
 
@@ -50,9 +50,6 @@ protected:
     state_vector_t  Q_r;
     /// Vehicle common acceleration
     state_vector_t  a;
-
-
-
 
 };
 

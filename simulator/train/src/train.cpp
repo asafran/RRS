@@ -27,6 +27,89 @@ Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeS
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
+Train::Train(const Train *train, size_t decouple, QObject *parent) : OdeSystem(parent)
+//  , trainMass(0.0)
+//  , trainLength(0.0)
+  , ode_order(train->ode_order)
+  , dir(train->dir)
+  , profile(train->profile)
+  , charging_pressure(train->brakepipe->getPressure(decouple))
+  , no_air(false)
+  , init_main_res_pressure(train->init_main_res_pressure)
+  , train_motion_solver(train->train_motion_solver)
+  , brakepipe(nullptr)
+  , soundMan(nullptr)
+  , time_controls(train->time_controls)
+  , solver_config(train->solver_config)
+  , vehicles(train->vehicles.begin() + decouple, train->vehicles.end())
+  , couplings(train->couplings.begin() + decouple, train->couplings.end() - 1)
+{
+    FileSystem &fs = FileSystem::getInstance();
+    try
+    {
+        soundMan = new SoundManager();
+
+        Journal::instance()->info(QString("Created SoundManager at address: 0x%1")
+                                      .arg(reinterpret_cast<quint64>(soundMan), 0, 16));
+
+    } catch (const std::bad_alloc &)
+    {
+        Journal::instance()->error("Sound manager is;t created");
+    }
+    auto it = vehicles.begin();
+    for (; it != vehicles.end(); ++it)
+    {
+        soundMan->loadSounds((*it)->getSoundsDir());
+
+        connect(*it, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
+        connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
+
+        trainMass += (*it)->getMass();
+        trainLength += (*it)->getLength();
+
+    }
+    it = vehicles.begin() + 1;
+    vehicles.first()->setNextVehicle(*it);
+    vehicles.first()->setPrevVehicle(Q_NULLPTR);
+    for (; it != vehicles.end() - 1; ++it)
+    {
+        (*it)->setNextVehicle(*(it+1));
+        (*it)->setPrevVehicle(*(it-1));
+    }
+    vehicles.last()->setNextVehicle(Q_NULLPTR);
+    vehicles.last()->setPrevVehicle(*(it-1));
+
+    y.resize(ode_order);
+    dydt.resize(ode_order);
+
+    for (size_t i = 0; i < y.size(); i++)
+        y[i] = dydt[i] = 0;
+
+//    init_data_t init_data;
+//    init_data.init_velocity = train->getVelocity(decouple - 1);
+//    init_data.init_coord = train->vehicles[decouple ]
+
+    brakepipe = new BrakePipe();
+
+    brakepipe->setLength(trainLength);
+    brakepipe->setNodesNum(vehicles.size());
+
+    if (!no_air)
+        brakepipe->setBeginPressure(charging_pressure * Physics::MPa + Physics::pA);
+
+    brakepipe->init(QString(fs.getConfigDir().c_str()) + fs.separator() + "brakepipe.xml");
+
+    initVehiclesBrakes();
+
+
+
+}
+//------------------------------------------------------------------------------
+//
+//------------------------------------------------------------------------------
 Train::~Train()
 {
 
@@ -214,10 +297,13 @@ void Train::vehiclesStep(double t, double dt)
     for (auto i = begin; i != end; ++i)
     {
         Vehicle *vehicle = *i;
+        VehicleController *vc = static_cast<VehicleController *>(*i);
 
         brakepipe->setAuxRate(j, vehicle->getBrakepipeAuxRate());
         vehicle->setBrakepipePressure(brakepipe->getPressure(j));
         vehicle->integrationStep(y, t, dt);
+
+        vc->setRailwayCoord(vehicle->getRailwayCoord());
 
         ++j;
     }
@@ -304,7 +390,7 @@ size_t Train::getVehiclesNumber() const
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 QString Train::getClientName()
 {
     return client_name;
@@ -317,7 +403,7 @@ QString Train::getTrainID()
 {
     return train_id;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -329,7 +415,7 @@ int Train::getDirection() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::vector<Vehicle *> *Train::getVehicles()
+QVarLengthArray<Vehicle *> *Train::getVehicles()
 {
     return &vehicles;
 }
@@ -361,7 +447,7 @@ bool Train::loadTrain(QString cfg_path)
         {
             no_air = false;
         }
-
+/*
         if (!cfg.getString("Common", "ClientName", client_name))
         {
             client_name = "";
@@ -371,7 +457,7 @@ bool Train::loadTrain(QString cfg_path)
         {
             train_id = "";
         }        
-
+*/
         QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
 
         if (vehicle_node.isNull())
@@ -473,13 +559,13 @@ bool Train::loadTrain(QString cfg_path)
 
             vehicle_node = cfg.getNextSection();            
         }        
-
+/*
         for (auto it = vehicles.begin(); it != vehicles.end(); ++it)
         {
             Vehicle *vehicle = *it;
-            connect(this, &Train::sendDataToVehicle,
-                    vehicle, &Vehicle::receiveData, Qt::DirectConnection);
+            connect(this, &Train::sendDataToVehicle,v ehicle, &Vehicle::receiveData, Qt::DirectConnection);
         }
+        */
     }
     else
     {
@@ -599,7 +685,20 @@ void Train::initVehiclesBrakes()
     }
 }
 
-void Train::timerEvent(QTimerEvent *event)
+
+//------------------------------------------------------------------------------
+//
+/*------------------------------------------------------------------------------
+void Train::topologyStep()
+{
+    for (size_t i = 0; i < getVehicles()->size(); ++i)
+    {
+        VehicleController *vc = topology.getVehicleController(i);
+        vc[i].setRailwayCoord(train->getVehicles()->at(i)->getRailwayCoord());
+    }
+}
+*/
+void Train::process()
 {
     double tau = 0;
     double integration_time = static_cast<double>(time_controls.integration_time_interval) / 1000.0;
@@ -618,5 +717,15 @@ void Train::timerEvent(QTimerEvent *event)
         time_controls.t += time_controls.dt;
 
         postStep(time_controls.t);
+
+        QVarLengthArray<VehicleData> viewer_copy;
+
+        for (auto it = vehicles.begin(); it != vehicles.end(); ++it)
+        {
+            VehicleData copy = static_cast<VehicleData>(**it);
+            viewer_copy.push_back(copy);
+        }
+
+        emit posDataReady(viewer_copy);
     }
 }
