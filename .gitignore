@@ -1,2 +1,4 @@
 *.txt.user
-
+*.h.autosave
+*.cpp.autosave
+*.txt.autosave

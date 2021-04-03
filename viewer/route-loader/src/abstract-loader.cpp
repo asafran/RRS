@@ -30,12 +30,12 @@ RouteLoader::RouteLoader()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-vsg::Group *RouteLoader::getRoot()
+vsg::ref_ptr<vsg::Group> RouteLoader::getRoot()
 {
     if (root.valid())
-        return root.release();
+        return root;
     else
-        return nullptr;
+        return vsg::ref_ptr<vsg::Group>();
 }
 
 //------------------------------------------------------------------------------

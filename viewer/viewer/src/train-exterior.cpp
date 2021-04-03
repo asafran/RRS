@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+ф//------------------------------------------------------------------------------
 //
 //      Loading and processing train exterior
 //      (c) maisvendoo, 24/12/2018
@@ -31,6 +31,8 @@
 
 #include    "model-animation.h"
 
+#include    <iostream>
+
 #include    "display-loader.h"
 
 //------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ TrainExteriorHandler::TrainExteriorHandler(settings_t settings,
 
     if (!shared_memory.attach(QSharedMemory::ReadOnly))
     {
-        OSG_FATAL << "Can't connect to shared memory" << std::endl;
+        std::cerr << "Can't connect to shared memory" << std::endl;
     }
 
     //startTimer(settings.request_interval);
@@ -187,24 +189,24 @@ void TrainExteriorHandler::keyboardHandler(int key)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void TrainExteriorHandler::load(const std::string &train_config)
+void TrainExteriorHandler::load(const simulator_command_line_t &command_line)
 {
     // Check train config name
-    if (train_config.empty())
+    if (!command_line.train_config.is_present)
     {
-        OSG_FATAL << "Train config is't referenced" << std::endl;
+        std::cerr << "Train config is't referenced" << std::endl;
         return;
     }
 
     // Loading train config XML-file
     FileSystem &fs = FileSystem::getInstance();
-    std::string path = fs.combinePath(fs.getTrainsDir(), train_config + ".xml");
+    std::string path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value.toStdString() + ".xml");
 
     ConfigReader cfg(path);
 
     if (!cfg.isOpenned())
     {
-        OSG_FATAL << "Train's config file " << path << " is't opened" << std::endl;
+        std::cerr << "Train's config file " << path << " is't opened" << std::endl;
         return;
     }
 
@@ -212,7 +214,7 @@ void TrainExteriorHandler::load(const std::string &train_config)
 
     if (config_node == nullptr)
     {
-        OSG_FATAL << "There is no Config node in file " << path << std::endl;
+        std::cerr << "There is no Config node in file " << path << std::endl;
         return;
     }
 
@@ -230,7 +232,7 @@ void TrainExteriorHandler::load(const std::string &train_config)
 
             if (count_node == nullptr)
             {
-                OSG_FATAL << "Number of vehicles is't referenced" << std::endl;
+                std::cerr << "Number of vehicles is't referenced" << std::endl;
                 continue;
             }
 
@@ -243,7 +245,7 @@ void TrainExteriorHandler::load(const std::string &train_config)
 
             if (module_config_node == nullptr)
             {
-                OSG_FATAL << "Vehicle module config is't referenced" << std::endl;
+                std::cerr << "Vehicle module config is't referenced" << std::endl;
                 continue;
             }
 
@@ -256,7 +258,7 @@ void TrainExteriorHandler::load(const std::string &train_config)
 
                 if (!vehicle_model.valid())
                 {
-                    OSG_FATAL << "Vehicle model " << module_config_name << " is't loaded" << std::endl;
+                    std::cerr << "Vehicle model " << module_config_name << " is't loaded" << std::endl;
                     continue;
                 }
 
@@ -520,7 +522,7 @@ void TrainExteriorHandler::loadDisplays(ConfigReader &cfg,
 
     if (module_node == nullptr)
     {
-        OSG_FATAL << "Vehicle's module is't represented";
+        std::cerr << "Vehicle's module is't represented";
         return;
     }
 
@@ -536,7 +538,7 @@ void TrainExteriorHandler::loadDisplays(ConfigReader &cfg,
 
     if (module_config_node == nullptr)
     {
-        OSG_FATAL << "Vehicle's module config is't represented";
+        std::cerr << "Vehicle's module config is't represented";
         return;
     }
 
@@ -549,7 +551,7 @@ void TrainExteriorHandler::loadDisplays(ConfigReader &cfg,
 
     if (!displays_cfg.isOpenned())
     {
-        OSG_FATAL << "File " << displays_config << " is't found";
+        std::cerr << "File " << displays_config << " is't found";
         return;
     }
 
@@ -611,4 +613,9 @@ void TrainExteriorHandler::timerEvent(QTimerEvent *)
             dc->display->setInputSignals(nd.sd.back().te[i].analogSignal);
         }
     }
+}
+
+void TrainExteriorHandler::getTrainData(const QVarLengthArray<VehicleData> &vdata)
+{
+
 }

@@ -55,7 +55,7 @@ public:
     virtual void load(std::string routeDir, float view_dist = 1000.0f) = 0;
 
     /// Get route scene group node
-    virtual vsg::Group *getRoot();
+    virtual vsg::ref_ptr<vsg::Group> getRoot();
 
     virtual MotionPath *getMotionPath(int direction) = 0;
 
@@ -91,7 +91,7 @@ typedef RouteLoader* (*GetRouteLoader)();
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-extern "C" DECL_EXPORT vsg::ref_ptr<RouteLoader> loadRouteLoader(const std::string &path,
+extern "C" DECL_EXPORT RouteLoader *loadRouteLoader(const std::string &path,
                                                     const std::string &name);
 
 #endif

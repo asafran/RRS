@@ -24,7 +24,7 @@
 #include    "abstract-path.h"
 #include    "trajectory-element.h"
 
-//#include    <osgViewer/Viewer>
+#include    <vsg/viewer/Viewer.h>
 
 #include    "vehicle-exterior.h"
 #include    "animation-manager.h"
@@ -33,6 +33,7 @@
 #include    "server-data-struct.h"
 #include    "config-reader.h"
 #include    "display.h"
+#include    "model.h"
 
 #include    <queue>
 
@@ -57,7 +58,7 @@ public:
                         osgGA::GUIActionAdapter &aa);
 
     /// Get exterior scene group
-    osg::Group *getExterior();
+    vsg::Group *getExterior();
 
     std::vector<AnimationManager *> getAnimManagers();
 
@@ -66,6 +67,10 @@ signals:
     void setStatusBar(QString msg);
 
     void sendCameraPosition(camera_position_t cp);
+
+public slots:
+
+    void getTrainData(const QVarLengthArray<VehicleData> &vdata);
 
 private:
 
@@ -80,8 +85,14 @@ private:
     /// Shift camera up/down
     float height_shift;
 
+    std::vector<Train> trains;
+
+    QQueue<QVarLengthArray<VehicleData>> data_queue;
+
+    Topology topology;
+
     /// Route path (trajectory) contener
-    osg::ref_ptr<MotionPath> routePath;
+    //osg::ref_ptr<MotionPath> routePath;
 
     /// Train exterior scene group
     osg::ref_ptr<osg::Group> trainExterior;
@@ -104,7 +115,7 @@ private:
     void keyboardHandler(int key);
 
     /// Load train exterior from
-    void load(const std::string &train_config);
+    void load(const simulator_command_line_t &command_line);
 
     /// Moving train along track
     void moveTrain(double ref_time, const network_data_t &nd);

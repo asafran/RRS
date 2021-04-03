@@ -21,6 +21,8 @@
 
 /// QString to double
 extern "C" Q_DECL_EXPORT bool TextToDouble(QString text, double &value);
+/// QString to float
+extern "C" Q_DECL_EXPORT bool TextToFloat(QString text, float &value);
 /// QString to integer
 extern "C" Q_DECL_EXPORT bool TextToInt(QString text, int &value);
 /// Erase all spaces from QString

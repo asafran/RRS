@@ -24,6 +24,7 @@
 #include    "keyboard.h"
 
 #include    "train-exterior.h"
+#include    "simulator-command-line.h"
 
 //------------------------------------------------------------------------------
 //
@@ -68,14 +69,18 @@ protected:
     bool init(int argc, char *argv[]);   
 
     /// Load settings from config
-    settings_t loadSettings(const std::string &cfg_path) const;
+    settings_t loadSettings(const QString &cfg_path) const;
+
+    void applySettings(const settings_t &settings, vsg::ref_ptr<vsg::WindowTraits> windowTraits);
 
     /// Override settings from command line
-    void overrideSettingsByCommandLine(const cmd_line_t &cmd_line,
-                                       settings_t &settings);
+//    void overrideSettingsByCommandLine(const cmd_line_t &cmd_line,
+//                                       settings_t &settings);
 
     /// Load route form directory
     bool loadRoute(const std::string &routeDir);
+
+    bool loadTrain(const simulator_command_line_t &command_line);
 
     /// Init common graphical engine settings
     bool initEngineSettings(osg::Group *root);

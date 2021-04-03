@@ -17,6 +17,8 @@ target_link_libraries(vehicle physics)
 
 target_link_libraries(vehicle device)
 
+target_link_libraries(vehicle model)
+
 target_link_libraries(vehicle Journal)
 
 set_target_properties( vehicle

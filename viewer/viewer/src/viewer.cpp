@@ -32,7 +32,8 @@
 
 
 #include    "filesystem.h"
-#include    "config-reader.h"
+//#include    "config-reader.h"
+#include    "CfgReader.h"
 
 #include    <sstream>
 #include    <fstream>
@@ -49,6 +50,7 @@
 #include    "stat-manipulator.h"
 #include    "train-manipulator.h"
 #include    "camera-switcher.h"
+
 
 #include    <QObject>
 #include    <iostream>
@@ -173,7 +175,7 @@ bool RouteViewer::init(int argc, char *argv[])
     // Load selected route
     if (!loadRoute(cmd_line.route_dir.value))
     {
-        OSG_FATAL << "Route from " << cmd_line.route_dir.value << " is't loaded" << std::endl;
+        std::cerr << "Route from " << cmd_line.route_dir.value << " is't loaded" << std::endl;
         return false;
     }
 
@@ -221,7 +223,8 @@ bool RouteViewer::init(int argc, char *argv[])
     FileSystem &fs = FileSystem::getInstance();
 
     // Read settings from config file
-    settings = loadSettings(fs.getConfigDir() + fs.separator() + "settings.xml", windowTraits);
+
+    settings = loadSettings(QString::fromUtf8(fs.getConfigDir().c_str()) + QDir::separator().toLatin1() + "settings.xml");
 
 
     // set up defaults and read command line arguments to override them
@@ -246,20 +249,46 @@ bool RouteViewer::init(int argc, char *argv[])
     arguments.read("--samples", windowTraits->samples);
 /*
     auto numFrames = arguments.value(-1, "-f");
-    auto pathFilename = arguments.value(std::string(), "-p");
     auto loadLevels = arguments.value(0, "--load-levels");
     auto horizonMountainHeight = arguments.value(0.0, "--hmh");
     auto skyboxFilename = arguments.value(vsg::Path(), "--skybox");
-    auto outputFilename = arguments.value(vsg::Path(), "-o");
 */
-//    if (arguments.errors()) return arguments.writeErrorMessages(std::cerr);
+
+    simulator_command_line_t command_line;
+
+    if (arguments.read("--train-config", command_line.train_config.value)) command_line.train_config.is_present = true;
+    if (arguments.read("--clear-log")) command_line.clear_log.is_present = command_line.clear_log.value = true;
+
+
+    if (arguments.read("--init-coord"))
+    {
+        command_line.init_coord.is_present = true;
+        QString tmp;
+        arguments.read("--init-coord", tmp);
+        command_line.init_coord.value = tmp.toDouble();
+    }
+
+    if (arguments.read("--direction"))
+    {
+        command_line.direction.is_present = true;
+        QString tmp;
+        arguments.read("--direction", tmp);
+        command_line.direction.value = tmp.toInt();
+    }
 
     auto routeFilename = arguments.value(vsg::Path(), "--route");
+
+    if (arguments.errors()) return arguments.writeErrorMessages(std::cerr);
 
     // Load selected route
     if (!loadRoute(routeFilename))
     {
-        std::cout << "Route from " << routeFilename << " is't loaded" << std::endl;
+        std::cerr << "Route from " << routeFilename << " is't loaded" << std::endl;
+        return false;
+    }
+    if (!loadTrain(command_line))
+    {
+        std::cerr << "Failed to load train " << command_line.train_config.value.toStdString() << std::endl;
         return false;
     }
 
@@ -279,88 +308,150 @@ bool RouteViewer::init(int argc, char *argv[])
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-settings_t RouteViewer::loadSettings(const std::string &cfg_path, vsg::ref_ptr<vsg::WindowTraits> windowTraits) const
+settings_t RouteViewer::loadSettings(const QString &cfg_path) const
 {
     settings_t settings;
 
-    ConfigReader cfg(cfg_path);
+    CfgReader cfg;
 
-    if (cfg.isOpenned())
+    if (cfg.load(cfg_path))
     {
-        std::string secName = "Viewer";
+        QString secName = "Viewer";
 
-        cfg.getValue(secName, "HostAddress", settings.host_addr);
-        cfg.getValue(secName, "Port", settings.port);
-        cfg.getValue(secName, "Width", settings.width);
-        cfg.getValue(secName, "Height", settings.height);
-        cfg.getValue(secName, "FullScreen", settings.fullscreen);
-        cfg.getValue(secName, "VSync", settings.vsync);
-        cfg.getValue(secName, "LocalMode", settings.localmode);
-        cfg.getValue(secName, "posX", settings.x);
-        cfg.getValue(secName, "posY", settings.y);
-        cfg.getValue(secName, "FovY", settings.fovy);
-        cfg.getValue(secName, "zNear", settings.zNear);
-        cfg.getValue(secName, "zFar", settings.zFar);
-        cfg.getValue(secName, "ScreenNumber", settings.screen_number);
-        cfg.getValue(secName, "WindowDecoration", settings.window_decoration);
-        cfg.getValue(secName, "DoubleBuffer", settings.double_buffer);
-        cfg.getValue(secName, "Samples", settings.samples);
-        cfg.getValue(secName, "RequestInterval", settings.request_interval);
-        cfg.getValue(secName, "ReconnectInterval", settings.reconnect_interval);
-        cfg.getValue(secName, "MotionBlur", settings.persistence);
-        cfg.getValue(secName, "NotifyLevel", settings.notify_level);
-        cfg.getValue(secName, "ViewDistance", settings.view_distance);
+        cfg.getString(secName, "HostAddress", settings.host_addr);
+        cfg.getInt(secName, "Port", settings.port);
+        cfg.getInt(secName, "Width", settings.width);
+        cfg.getInt(secName, "Height", settings.height);
+        cfg.getBool(secName, "FullScreen", settings.fullscreen);
+        cfg.getBool(secName, "VSync", settings.vsync);
+        cfg.getBool(secName, "LocalMode", settings.localmode);
+        cfg.getInt(secName, "posX", settings.x);
+        cfg.getInt(secName, "posY", settings.y);
+        cfg.getDouble(secName, "FovY", settings.fovy);
+        cfg.getDouble(secName, "zNear", settings.zNear);
+        cfg.getDouble(secName, "zFar", settings.zFar);
+        int tmp = 0;
+        cfg.getInt(secName, "ScreenNumber", tmp);
+        settings.screen_number = tmp;
+        cfg.getBool(secName, "WindowDecoration", settings.window_decoration);
+        cfg.getBool(secName, "DoubleBuffer", settings.double_buffer);
+        cfg.getBool(secName, "Samples", settings.samples);
+        cfg.getInt(secName, "RequestInterval", settings.request_interval);
+        cfg.getInt(secName, "ReconnectInterval", settings.reconnect_interval);
+        cfg.getDouble(secName, "MotionBlur", settings.persistence);
+        cfg.getString(secName, "NotifyLevel", settings.notify_level);
+        cfg.getFloat(secName, "ViewDistance", settings.view_distance);
 
-        cfg.getValue(secName, "CabineCamRotCoeff", settings.cabine_cam_rot_coeff);
-        cfg.getValue(secName, "CabineCamFovYStep", settings.cabine_cam_fovy_step);
-        cfg.getValue(secName, "CabineCamSpeed", settings.cabine_cam_speed);
+        cfg.getFloat(secName, "CabineCamRotCoeff", settings.cabine_cam_rot_coeff);
+        cfg.getFloat(secName, "CabineCamFovYStep", settings.cabine_cam_fovy_step);
+        cfg.getFloat(secName, "CabineCamSpeed", settings.cabine_cam_speed);
 
-        cfg.getValue(secName, "ExtCamInitDist", settings.ext_cam_init_dist);
-        cfg.getValue(secName, "ExtCamInitHeight", settings.ext_cam_init_height);
-        cfg.getValue(secName, "ExtCamInitShift", settings.ext_cam_init_shift);
-        cfg.getValue(secName, "ExtCamRotCoeff", settings.ext_cam_rot_coeff);
-        cfg.getValue(secName, "ExtCamSpeed", settings.ext_cam_speed);
-        cfg.getValue(secName, "ExtCamSpeedCoeff", settings.ext_cam_speed_coeff);
-        cfg.getValue(secName, "ExtCamMinDist", settings.ext_cam_min_dist);
-        cfg.getValue(secName, "ExtCamInitAngleH", settings.ext_cam_init_angle_H);
-        cfg.getValue(secName, "ExtCamInitAngleV", settings.ext_cam_init_angle_V);
+        cfg.getFloat(secName, "ExtCamInitDist", settings.ext_cam_init_dist);
+        cfg.getFloat(secName, "ExtCamInitHeight", settings.ext_cam_init_height);
+        cfg.getFloat(secName, "ExtCamInitShift", settings.ext_cam_init_shift);
+        cfg.getFloat(secName, "ExtCamRotCoeff", settings.ext_cam_rot_coeff);
+        cfg.getFloat(secName, "ExtCamSpeed", settings.ext_cam_speed);
+        cfg.getFloat(secName, "ExtCamSpeedCoeff", settings.ext_cam_speed_coeff);
+        cfg.getFloat(secName, "ExtCamMinDist", settings.ext_cam_min_dist);
+        cfg.getFloat(secName, "ExtCamInitAngleH", settings.ext_cam_init_angle_H);
+        cfg.getFloat(secName, "ExtCamInitAngleV", settings.ext_cam_init_angle_V);
 
-        std::string tmp = "";
-        cfg.getValue(secName, "FreeCamInitPos", tmp);
-        std::istringstream ss(tmp);
+        QString tmp_str = "";
+        cfg.getString(secName, "FreeCamInitPos", tmp_str);
+        std::istringstream ss(tmp_str.toStdString());
 
         ss >> settings.free_cam_init_pos.x()
            >> settings.free_cam_init_pos.y()
            >> settings.free_cam_init_pos.z();
 
-        cfg.getValue(secName, "FreeCamRotCoeff", settings.free_cam_rot_coeff);
-        cfg.getValue(secName, "FreeCamSpeed", settings.free_cam_speed);
-        cfg.getValue(secName, "FreeCamSpeedCoeff", settings.free_cam_speed_coeff);
-        cfg.getValue(secName, "FreeCamFovY", settings.free_cam_fovy_step);
+        cfg.getFloat(secName, "FreeCamRotCoeff", settings.free_cam_rot_coeff);
+        cfg.getFloat(secName, "FreeCamSpeed", settings.free_cam_speed);
+        cfg.getFloat(secName, "FreeCamSpeedCoeff", settings.free_cam_speed_coeff);
+        cfg.getFloat(secName, "FreeCamFovY", settings.free_cam_fovy_step);
 
-        cfg.getValue(secName, "StatCamDist", settings.stat_cam_dist);
-        cfg.getValue(secName, "StatCamHeight", settings.stat_cam_height);
-        cfg.getValue(secName, "StatCamShift", settings.stat_cam_shift);
+        cfg.getFloat(secName, "StatCamDist", settings.stat_cam_dist);
+        cfg.getFloat(secName, "StatCamHeight", settings.stat_cam_height);
+        cfg.getFloat(secName, "StatCamShift", settings.stat_cam_shift);
 
-        if (settings.double_buffer) windowTraits->swapchainPreferences.imageCount = 2;
-        else windowTraits->swapchainPreferences.imageCount = 3; // default
-        if (!settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-        //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-        if (settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
-        //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 
-        if (settings.fullscreen) windowTraits->fullscreen = true;
-        else {
-            windowTraits->width = settings.width;
-            windowTraits->height = settings.height;
-            windowTraits->fullscreen = false;
+//------------------------------------------------------------------------------
+
+        secName = "InitData";
+        if (!cfg.getDouble(secName, "InitCoord", settings.simulator_init_data.init_coord))
+        {
+            settings.simulator_init_data.init_coord = 1.0;
         }
 
-        if (!settings.window_decoration) windowTraits->decoration = false;
-        //windowTraits->depthFormat = VK_FORMAT_D32_SFLOAT;
-        windowTraits->screenNum = settings.screen_number;
-        windowTraits->display = settings.screen_number;
-        windowTraits->samples = settings.samples;
+        if (!cfg.getDouble(secName, "InitVelocity", settings.simulator_init_data.init_velocity))
+        {
+            settings.simulator_init_data.init_velocity = 0.0;
+        }
+
+        if (!cfg.getString(secName, "Profile", settings.simulator_init_data.profile_path))
+        {
+            settings.simulator_init_data.profile_path = "default";
+        }
+
+        if (!cfg.getDouble(secName, "ProfileStep", settings.simulator_init_data.prof_step))
+        {
+            settings.simulator_init_data.prof_step = 100.0;
+        }
+
+        if (!cfg.getString(secName, "TrainConfig", settings.simulator_init_data.train_config))
+        {
+            settings.simulator_init_data.train_config = "default-train";
+        }
+
+        if (!cfg.getInt(secName, "IntegrationTimeInterval", settings.simulator_init_data.integration_time_interval))
+        {
+            settings.simulator_init_data.integration_time_interval = 100;
+        }
+
+        if (!cfg.getInt(secName, "ControlTimeInterval", settings.simulator_init_data.control_time_interval))
+        {
+            settings.simulator_init_data.control_time_interval = 50;
+        }
+
+//        control_delay = static_cast<double>(settings.simulator_init_data.control_time_interval) / 1000.0;
+
+        settings.simulator_init_data.debug_print = false;
+
+//------------------------------------------------------------------------------
+
+        secName = "Solver";
+        if (!cfg.getString(secName, "Method", settings.simulator_init_data.solver_config.method))
+        {
+            settings.simulator_init_data.solver_config.method = "rkf5";
+        }
+
+//        Journal::instance()->info("Integration method: " + settings.simulator_init_data.solver_config.method);
+
+        if (!cfg.getDouble(secName, "StartTime", settings.simulator_init_data.solver_config.start_time))
+        {
+            settings.simulator_init_data.solver_config.start_time = 0;
+        }
+
+//        Journal::instance()->info("Start time: " + QString("%1").arg(settings.simulator_init_data.solver_config.start_time));
+
+        if (!cfg.getDouble(secName, "StopTime", settings.simulator_init_data.solver_config.stop_time))
+        {
+            settings.simulator_init_data.solver_config.stop_time = 10.0;
+        }
+
+//        Journal::instance()->info("Stop time: " + QString("%1").arg(settings.simulator_init_data.solver_config.stop_time));
+
+        if (!cfg.getDouble(secName, "InitStep", settings.simulator_init_data.solver_config.step))
+        {
+            settings.simulator_init_data.solver_config.step = 1e-4;
+        }
+
+//        Journal::instance()->info("Initial integration step: " + QString("%1").arg(settings.simulator_init_data.solver_config.step));
+
+        if (!cfg.getDouble(secName, "MaxStep", settings.simulator_init_data.solver_config.max_step))
+        {
+            settings.simulator_init_data.solver_config.max_step = 1e-2;
+        }
+
     }
 
     return settings;
@@ -369,6 +460,32 @@ settings_t RouteViewer::loadSettings(const std::string &cfg_path, vsg::ref_ptr<v
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
+void RouteViewer::applySettings(const settings_t &settings, vsg::ref_ptr<vsg::WindowTraits> windowTraits)
+{
+    if (settings.double_buffer) windowTraits->swapchainPreferences.imageCount = 2;
+    else windowTraits->swapchainPreferences.imageCount = 3; // default
+    if (!settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+    //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    if (settings.vsync) windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    //windowTraits->swapchainPreferences.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+
+    if (settings.fullscreen) windowTraits->fullscreen = true;
+    else {
+        windowTraits->width = settings.width;
+        windowTraits->height = settings.height;
+        windowTraits->fullscreen = false;
+    }
+
+    if (!settings.window_decoration) windowTraits->decoration = false;
+    //windowTraits->depthFormat = VK_FORMAT_D32_SFLOAT;
+    windowTraits->screenNum = settings.screen_number;
+    windowTraits->display = settings.screen_number;
+    windowTraits->samples = settings.samples;
+}
+
+//------------------------------------------------------------------------------
+//
+/*------------------------------------------------------------------------------
 void RouteViewer::overrideSettingsByCommandLine(const cmd_line_t &cmd_line,
                                                 settings_t &settings)
 {
@@ -399,7 +516,7 @@ void RouteViewer::overrideSettingsByCommandLine(const cmd_line_t &cmd_line,
     if (cmd_line.direction.is_present)
         settings.direction = cmd_line.direction.value;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -407,17 +524,17 @@ bool RouteViewer::loadRoute(const vsg::Path &routeDir)
 {
     if (routeDir.empty())
     {
-        OSG_FATAL << "ERROR: Route path is empty" << std::endl;
-        OSG_FATAL << "Route path: " << routeDir << std::endl;
+        std::cerr << "ERROR: Route path is empty" << std::endl;
+        std::cerr << "Route path: " << routeDir << std::endl;
         return false;
     }
 
     FileSystem &fs = FileSystem::getInstance();
-    std::string routeType = osgDB::findDataFile(routeDir + fs.separator() + "route-type");
+    vsg::Path routeType(routeDir + fs.separator() + "route-type");
 
-    if (routeType.empty())
+    if (!vsg::fileExists(routeType))
     {
-        OSG_FATAL << "ERROR: File route-type is not found in route directory" << std::endl;
+        std::cerr << "ERROR: File route-type is not found in route directory" << std::endl;
         return false;
     }
 
@@ -425,7 +542,7 @@ bool RouteViewer::loadRoute(const vsg::Path &routeDir)
 
     if (!stream.is_open())
     {
-        OSG_FATAL << "ERROR: Stream for route-type file is't open" << std::endl;
+        std::cerr << "ERROR: Stream for route-type file is't open" << std::endl;
         return false;
     }
 
@@ -434,7 +551,7 @@ bool RouteViewer::loadRoute(const vsg::Path &routeDir)
 
     if (routeExt.empty())
     {
-        OSG_FATAL << "ERROR: Unknown route type" << std::endl;
+        std::cerr << "ERROR: Unknown route type" << std::endl;
         return false;
     }
 
@@ -444,31 +561,37 @@ bool RouteViewer::loadRoute(const vsg::Path &routeDir)
 
     if (!loader.valid())
     {
-        OSG_FATAL << "ERROR: Not found route loader for this route" << std::endl;
+        std::cerr << "ERROR: Not found route loader for this route" << std::endl;
         return false;
     }
 
     loader->load(routeDir, settings.view_distance);
 
-    MotionPath *motionPath = loader->getMotionPath(settings.direction);
+//    MotionPath *motionPath = loader->getMotionPath(settings.direction);
 
     train_ext_handler = new TrainExteriorHandler(settings, motionPath, settings.train_config);
     viewer.addEventHandler(train_ext_handler);
 
 
     //viewer.addEventHandler(train_ext_handler->getAnimationManager());
-    std::vector<AnimationManager *> anims_manager = train_ext_handler->getAnimManagers();
+//    std::vector<AnimationManager *> anims_manager = train_ext_handler->getAnimManagers();
 
     for (auto am : anims_manager)
     {
         viewer.addEventHandler(am);
     }
 
-    root = new osg::Group;
-    root->addChild(train_ext_handler->getExterior());
+    root = new vsg::Group;
+    //root->addChild(train_ext_handler->getExterior());
     root->addChild(loader->getRoot());
 
     return true;
+}
+bool RouteViewer::loadTrain(const simulator_command_line_t &command_line)
+{
+      train_ext_handler = new TrainExteriorHandler();
+      viewer.addEventHandler(train_ext_handler);
+      root->addChild(anim)
 }
 
 //------------------------------------------------------------------------------

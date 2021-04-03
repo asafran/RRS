@@ -28,6 +28,7 @@
 //
 //------------------------------------------------------------------------------
 Vehicle::Vehicle(QObject *parent) : QObject(parent)
+  , VehicleData()
   , idx(0)
   , empty_mass(24000.0)
   , payload_mass(68000.0)
@@ -38,12 +39,8 @@ Vehicle::Vehicle(QObject *parent) : QObject(parent)
   , J_axis(2.0)
   , wheel_diameter(0.95)
   , rk(0.475)
-  , R1(0.0)
-  , R2(0.0)
   , s(5)
   , railway_coord0(0.0)
-  , railway_coord(0.0)
-  , velocity(0.0)
   , b0(0.0)
   , b1(0.0)
   , b2(0.0)
@@ -62,8 +59,8 @@ Vehicle::Vehicle(QObject *parent) : QObject(parent)
   , Uks(0.0)
   , current_kind(0)
 {
-    std::fill(analogSignal.begin(), analogSignal.end(), 0.0f);
-    std::fill(discreteSignal.begin(), discreteSignal.end(), false);
+//    std::fill(analogSignal.begin(), analogSignal.end(), 0.0f);
+//    std::fill(discreteSignal.begin(), discreteSignal.end(), false);
 
     std::fill(inputs.begin(), inputs.end(), 0.0f);
     std::fill(outputs.begin(), outputs.end(), 0.0f);
@@ -267,7 +264,7 @@ double Vehicle::getWheelDiameter() const
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 bool Vehicle::getDiscreteSignal(size_t i)
 {
     if (i < discreteSignal.size())
@@ -286,7 +283,7 @@ float Vehicle::getAnalogSignal(size_t i)
     else
         return 0.0f;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -416,7 +413,7 @@ QString Vehicle::getDebugMsg() const
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 void Vehicle::receiveData(QByteArray data)
 {
     if (data.size() == 0)
@@ -429,7 +426,7 @@ void Vehicle::receiveData(QByteArray data)
 
     keys_mutex.unlock();
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -515,7 +512,7 @@ void Vehicle::setUks(double value)
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 std::array<bool, MAX_DISCRETE_SIGNALS> Vehicle::getDiscreteSignals()
 {
     return discreteSignal;
@@ -528,7 +525,7 @@ std::array<float, MAX_ANALOG_SIGNALS> Vehicle::getAnalogSignals()
 {
     return analogSignal;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -709,7 +706,7 @@ void Vehicle::hardwareOutput()
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 bool Vehicle::isShift() const
 {
     return getKeyState(KEY_Shift_L) || getKeyState(KEY_Shift_R);
@@ -743,7 +740,7 @@ bool Vehicle::getKeyState(int key) const
 
     return false;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------

@@ -102,7 +102,7 @@ bool ProcAnimation::loadKeyPoints(ConfigReader &cfg)
 
     if (config_node == nullptr)
     {
-        OSG_FATAL << "There is no Config node in file" << std::endl;
+        std::cerr << "There is no Config node in file" << std::endl;
         return false;
     }
 
@@ -120,7 +120,7 @@ bool ProcAnimation::loadKeyPoints(ConfigReader &cfg)
 
             if (node == nullptr)
             {
-                OSG_FATAL << "Param of keypoint is missing" << std::endl;
+                std::cerr << "Param of keypoint is missing" << std::endl;
                 continue;
             }
 
@@ -130,7 +130,7 @@ bool ProcAnimation::loadKeyPoints(ConfigReader &cfg)
 
             if (node == nullptr)
             {
-                OSG_FATAL << "Value of keypoint is missing" << std::endl;
+                std::cerr << "Value of keypoint is missing" << std::endl;
                 continue;
             }
 

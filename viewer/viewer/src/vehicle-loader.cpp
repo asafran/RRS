@@ -52,13 +52,13 @@ osg::Node *loadModel(const std::string &modelName, const std::string &textureNam
     }
     else
     {
-        OSG_FATAL << "ERROR: model " << model_path << " is't found";
+        std::cerr << "ERROR: model " << model_path << " is't found";
         return nullptr;
     }
 
     if (!model.valid())
     {
-        OSG_FATAL << "ERROR: model " << model_path << " loading failed";
+        std::cerr << "ERROR: model " << model_path << " loading failed";
         return nullptr;
     }    
 
@@ -155,7 +155,7 @@ void loadCabine(osg::Group *vehicle,
 
     if (!cfg.isOpenned())
     {
-        OSG_FATAL << "Vehicle config " << cfg_path << " is't foung" << std::endl;
+        std::cerr << "Vehicle config " << cfg_path << " is't foung" << std::endl;
         return;
     }
 
@@ -207,7 +207,7 @@ float getLength(const std::string &config_name)
 
     if (!cfg.isOpenned())
     {
-        OSG_FATAL << "Vehicle config " << cfg_path << " is't foung" << std::endl;
+        std::cerr << "Vehicle config " << cfg_path << " is't foung" << std::endl;
         return length;
     }
 
@@ -235,7 +235,7 @@ osg::Vec3 getDirverPosition(const std::string &config_name)
 
     if (!cfg.isOpenned())
     {
-        OSG_FATAL << "Vehicle config " << cfg_path << " is't foung" << std::endl;
+        std::cerr << "Vehicle config " << cfg_path << " is't foung" << std::endl;
         return position;
     }
 

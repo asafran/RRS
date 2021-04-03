@@ -26,6 +26,7 @@
 #include    "brakepipe.h"
 #include    "profile.h"
 #include    "sound-manager.h"
+#include    "time_controls_t.h"
 
 #include    <QByteArray>
 
@@ -49,7 +50,7 @@ class TRAIN_EXPORT Train : public OdeSystem
 public:
 
     /// Constructor
-    explicit Train(Profile *profile, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, time_controls_t controls, QObject *parent = Q_NULLPTR);
     /// Destructor
     virtual ~Train();
 
@@ -141,6 +142,8 @@ private:
     /// Идентификатор поезда для ВЖД
     QString     train_id;
 
+    time_controls_t time_controls;
+
     /// All train's vehicles
     std::vector<Vehicle *> vehicles;
 
@@ -160,6 +163,8 @@ private:
 
     /// Initialization of vehicles brakes
     void initVehiclesBrakes();
+
+    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // TRAIN_H

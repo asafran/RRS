@@ -43,6 +43,21 @@ target_link_libraries(viewer display-player)
 
 target_link_libraries(viewer TcpConnection)
 
+target_link_libraries(viewer CfgReader)
+target_link_libraries(viewer filesystem)
+target_link_libraries(viewer Journal)
+target_link_libraries(viewer physics)
+target_link_libraries(viewer vehicle)
+target_link_libraries(viewer coupling)
+target_link_libraries(viewer solver)
+target_link_libraries(viewer train)
+target_link_libraries(viewer brakepipe)
+target_link_libraries(viewer TcpConnection)
+target_link_libraries(viewer sim-client)
+target_link_libraries(viewer profile)
+target_link_libraries(viewer device)
+target_link_libraries(viewer model)
+
 set_target_properties( viewer
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}../../bin"

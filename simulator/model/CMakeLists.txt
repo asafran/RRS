@@ -21,10 +21,14 @@ target_link_libraries(model sim-client)
 target_link_libraries(model profile)
 target_link_libraries(model device)
 
+target_link_libraries(model vsg::vsg)
+
 target_link_libraries(model asound)
 target_link_libraries(model sound-manager)
 
 target_include_directories(model PRIVATE ../../common-headers)
+
+target_include_directories(model PRIVATE ../../vmmlib)
 
 target_include_directories(model PRIVATE ${OPENAL_INCLUDE_DIR})
 

@@ -16,7 +16,7 @@ void loadDisplayModule(const display_config_t &display_config,
 
     if (dc->display == nullptr)
     {
-        OSG_FATAL << "Module " << display_config.module_name.toStdString() << " is't found";
+        std::cerr << "Module " << display_config.module_name.toStdString() << " is't found";
         return;
     }    
 

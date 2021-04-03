@@ -113,6 +113,25 @@ bool CfgReader::getDouble(QString section, QString field, double &value)
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
+bool CfgReader::getFloat(QString section, QString field, float &value)
+{
+    QString tmp;
+    if (!getString(section, field, tmp))
+    {
+        return false;
+    }
+
+    if (!TextToFloat(tmp, value))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
 bool CfgReader::getInt(QString section, QString field, int &value)
 {
 	QString tmp;
@@ -214,6 +233,26 @@ bool CfgReader::getDouble(QDomNode secNode, QString field, double &value)
 	}
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+bool CfgReader::getFloat(QDomNode secNode, QString field, float &value)
+{
+    QString tmp;
+
+    if (!getString(secNode, field, tmp))
+    {
+        return false;
+    }
+
+    if (!TextToFloat(tmp, value))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 //-----------------------------------------------------------------------------

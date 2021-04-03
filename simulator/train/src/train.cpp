@@ -7,7 +7,7 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Train::Train(Profile *profile, QObject *parent) : OdeSystem(parent)
+Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeSystem(parent)
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
@@ -19,6 +19,7 @@ Train::Train(Profile *profile, QObject *parent) : OdeSystem(parent)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
+  , time_controls(controls)
 {
 
 }
@@ -595,5 +596,27 @@ void Train::initVehiclesBrakes()
     {
         double pTM = brakepipe->getPressure(i);
         vehicles[i]->initBrakeDevices(charging_pressure, pTM, init_main_res_pressure);
+    }
+}
+
+void Train::timerEvent(QTimerEvent *event)
+{
+    double tau = 0;
+    double integration_time = static_cast<double>(time_controls.integration_time_interval) / 1000.0;
+    bool is_step_correct = true;
+    // Integrate all ODE in train motion model
+    while ( (tau <= integration_time) &&
+            is_step_correct)
+    {
+        preStep(time_controls.t);
+
+        is_step_correct = step(time_controls.t, time_controls.dt);
+
+        //topologyStep();
+
+        tau += time_controls.dt;
+        time_controls.t += time_controls.dt;
+
+        postStep(time_controls.t);
     }
 }

@@ -18,6 +18,8 @@
 #include    <string>
 
 //#include    <osg/Vec3>
+#include    "init_data.h"
+#include    <QString>
 
 /*!
  * \struct
@@ -29,11 +31,11 @@
 struct settings_t
 {
     /// Route directory
-    std::string     route_dir;
+    QString     route_dir;
     /// Train config file name
-    std::string     train_config;
+    QString     train_config;
     /// Server ip-address
-    std::string     host_addr;
+    QString     host_addr;
     /// Server port
     int             port;
     /// Window horizontal position
@@ -59,7 +61,7 @@ struct settings_t
     /// Screen number
     unsigned int    screen_number;
     /// Client name for server autorization
-    std::string     name;
+    QString     name;
     /// Set/unset window decorations
     bool            window_decoration;
     /// Set/unset double buffering
@@ -77,7 +79,7 @@ struct settings_t
     /// Route motion direction
     int             direction;
     /// Notify level
-    std::string     notify_level;
+    QString     notify_level;
     /// View distance
     float           view_distance;
 
@@ -124,6 +126,8 @@ struct settings_t
     float           stat_cam_height;
     /// Static camera shift
     float           stat_cam_shift;
+
+    init_data_t simulator_init_data;
 
     settings_t()
         : route_dir("")

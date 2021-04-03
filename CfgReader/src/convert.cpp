@@ -53,6 +53,21 @@ bool TextToInt(QString text, int &value)
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
+bool TextToFloat(QString text, float &value)
+{
+    bool validate = false;
+    value = text.toFloat(&validate);
+
+    if (!validate)
+    {
+        return false;
+    }
+
+    return true;
+}
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
 QString EraseSpaces(QString str)
 {
     QString result = "";
