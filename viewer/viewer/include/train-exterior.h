@@ -85,7 +85,7 @@ private:
     /// Shift camera up/down
     float height_shift;
 
-    std::vector<Train> trains;
+    QVarLengthArray<Train, 16> trains;
 
     QQueue<QVarLengthArray<VehicleData>> data_queue;
 

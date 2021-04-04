@@ -52,13 +52,18 @@ public:
     /// Constructor
     explicit Train(Profile *profile, time_controls_t controls, QObject *parent = Q_NULLPTR);
 
-    explicit Train(const Train *train, size_t decouple, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, QVarLengthArray<Vehicle *>, time_controls_t controls,
+                   init_data_t init_data, QObject *parent = Q_NULLPTR);
 
     /// Destructor
     virtual ~Train();
 
     /// Train initialization
-    bool init(const init_data_t &init_data);
+    bool init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);
+
+    bool addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t);
+
+    bool addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t);
 
     /// Calculation of right part motion ODE's
     void calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t);
@@ -126,6 +131,10 @@ private:
     /// Profile manager
     Profile     *profile;
 
+    double init_velocity;
+
+    double init_coord;
+
     /// Charging pressure
     double      charging_pressure;
 
@@ -143,6 +152,8 @@ private:
 
     /// Sound manager
     SoundManager *soundMan;
+
+    QString full_config_path;
 
     /// Имя сетевого клиента для ВЖД
 //    QString     client_name;
@@ -162,7 +173,7 @@ private:
     solver_config_t solver_config;
 
     /// Train's loading
-    bool loadTrain(QString cfg_path);
+//    bool loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);
     /// Couplings loading
     bool loadCouplings(QString cfg_path);
 

@@ -27,6 +27,28 @@ Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeS
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
+Train::Train(Profile *profile, const QVarLengthArray<Vehicle *> vehicles, time_controls_t controls,
+             init_data_t init_data, QObject *parent) : OdeSystem(parent)
+  , trainMass(0.0)
+  , trainLength(0.0)
+  , ode_order(0)
+  , dir(init_data.direction)
+  , profile(profile)
+  , init_velocity(init_data.init_velocity)
+  , init_coord(init_data.init_coord)
+  , charging_pressure(init_data.charging_pressure)
+  , no_air(init_data.no_air)
+  , init_main_res_pressure(init_data.init_main_res_pressure)
+  , train_motion_solver(nullptr)
+  , brakepipe(nullptr)
+  , soundMan(nullptr)
+  , time_controls(controls)
+{
+    init(init_data, vehicles);
+}
+//------------------------------------------------------------------------------
+//
+/*------------------------------------------------------------------------------
 Train::Train(const Train *train, size_t decouple, QObject *parent) : OdeSystem(parent)
 //  , trainMass(0.0)
 //  , trainLength(0.0)
@@ -103,10 +125,8 @@ Train::Train(const Train *train, size_t decouple, QObject *parent) : OdeSystem(p
     brakepipe->init(QString(fs.getConfigDir().c_str()) + fs.separator() + "brakepipe.xml");
 
     initVehiclesBrakes();
-
-
-
 }
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -118,11 +138,11 @@ Train::~Train()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Train::init(const init_data_t &init_data)
+bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t)
 {
     solver_config = init_data.solver_config;    
 
-    dir = init_data.direction;
+//    dir = init_data.direction;
 
     // Solver loading
     FileSystem &fs = FileSystem::getInstance();
@@ -141,7 +161,7 @@ bool Train::init(const init_data_t &init_data)
 
     Journal::instance()->info("Loaded solver: " + solver_path);
 
-    QString full_config_path = QString(fs.getTrainsDir().c_str()) +
+    full_config_path = QString(fs.getTrainsDir().c_str()) +
             fs.separator() +
             init_data.train_config + ".xml";
 
@@ -160,55 +180,12 @@ bool Train::init(const init_data_t &init_data)
     }
 
     // Loading of train
-    if (!loadTrain(full_config_path))
+    if (!addVehiclesBack(vehicles_t))
     {
         Journal::instance()->error("Train is't loaded");
         return false;
     }
 
-    // State vector initialization
-    y.resize(ode_order);
-    dydt.resize(ode_order);
-
-    Journal::instance()->info(QString("Allocated memory for %1 ODE's").arg(ode_order));
-
-    Journal::instance()->info(QString("State vector address: 0x%1")
-                              .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
-
-    Journal::instance()->info(QString("State vector derivative address: 0x%1")
-                              .arg(reinterpret_cast<quint64>(dydt.data()), 0, 16));
-
-    for (size_t i = 0; i < y.size(); i++)
-        y[i] = dydt[i] = 0;
-
-    // Loading of couplings
-    if (!loadCouplings(full_config_path))
-    {
-        Journal::instance()->error("Coupling model is't loaded");
-        return false;
-    }
-
-    // Set initial conditions
-    Journal::instance()->info("Setting up of initial conditions");
-    setInitConditions(init_data);
-
-    // Brakepipe initialization
-    brakepipe = new BrakePipe();
-
-    Journal::instance()->info(QString("Created brakepipe object at address: 0x%1")
-                              .arg(reinterpret_cast<quint64>(brakepipe), 0, 16));
-
-    brakepipe->setLength(trainLength);
-    brakepipe->setNodesNum(vehicles.size());
-
-    if (!no_air)
-        brakepipe->setBeginPressure(charging_pressure * Physics::MPa + Physics::pA);
-
-    brakepipe->init(QString(fs.getConfigDir().c_str()) + fs.separator() + "brakepipe.xml");
-
-    initVehiclesBrakes();
-
-    return true;
 }
 
 //------------------------------------------------------------------------------
@@ -422,12 +399,9 @@ QVarLengthArray<Vehicle *> *Train::getVehicles()
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
-bool Train::loadTrain(QString cfg_path)
+/*------------------------------------------------------------------------------
+bool Train::loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t)
 {
-    CfgReader cfg;
-    FileSystem &fs = FileSystem::getInstance();
-
     Journal::instance()->info("Train loading is started...");
 
     if (cfg.load(cfg_path))
@@ -447,7 +421,7 @@ bool Train::loadTrain(QString cfg_path)
         {
             no_air = false;
         }
-/*
+
         if (!cfg.getString("Common", "ClientName", client_name))
         {
             client_name = "";
@@ -457,7 +431,7 @@ bool Train::loadTrain(QString cfg_path)
         {
             train_id = "";
         }        
-*/
+
         QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
 
         if (vehicle_node.isNull())
@@ -498,7 +472,7 @@ bool Train::loadTrain(QString cfg_path)
             {
                 payload_coeff = 0;
             }
-
+    
             for (int i = 0; i < n_vehicles; i++)
             {
                 Vehicle *vehicle = loadVehicle(QString(fs.getModulesDir().c_str()) +
@@ -559,13 +533,13 @@ bool Train::loadTrain(QString cfg_path)
 
             vehicle_node = cfg.getNextSection();            
         }        
-/*
+
         for (auto it = vehicles.begin(); it != vehicles.end(); ++it)
         {
             Vehicle *vehicle = *it;
             connect(this, &Train::sendDataToVehicle,v ehicle, &Vehicle::receiveData, Qt::DirectConnection);
         }
-        */
+
     }
     else
     {
@@ -573,7 +547,168 @@ bool Train::loadTrain(QString cfg_path)
     }
 
     // Check train is't empty and return
-    return vehicles.size() != 0;
+    return !vehicles.isEmpty();
+}
+*/
+bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
+{
+    FileSystem &fs = FileSystem::getInstance();
+
+    size_t index = ode_order;
+    bool was_empty = vehicles.isEmpty();
+
+    for (auto it = vehicles_t.begin(); it != vehicles_t.end(); ++it)
+    {
+        connect(*it, &Vehicle::logMessage, this, &Train::logMessage);
+
+        (*it)->setDirection(dir);
+
+        trainMass += (*it)->getMass();
+        trainLength += (*it)->getLength();
+
+        size_t s = (*it)->getDegressOfFreedom();
+
+        ode_order += 2 * s;
+
+        (*it)->setIndex(index);
+        index = ode_order;
+
+        // Loading sounds
+        soundMan->loadSounds((*it)->getSoundsDir());
+
+        connect(*it, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
+        connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
+
+        if (vehicles.size() !=0)
+        {
+            Vehicle *prev =  *(vehicles.end() - 1);
+            prev->setNextVehicle(*it);
+            (*it)->setPrevVehicle(prev);
+        }
+
+        y.resize(ode_order);
+        dydt.resize(ode_order);
+
+        if(vehicles.isEmpty())
+            y[index + s] = init_velocity / Physics::kmh;
+        else
+            y[index + s] = getVelocity(vehicles.size() - 1) / Physics::kmh;
+
+        double wheel_radius = (*it)->getWheelDiameter() / 2.0;
+
+        for (size_t j = 1; j < static_cast<size_t>(s); j++)
+        {
+            y[index + s + j] = y[index + s] / wheel_radius;
+        }
+
+        this->vehicles.push_back(*it);
+
+    }
+
+
+    Journal::instance()->info(QString("Allocated memory for %1 ODE's").arg(ode_order));
+
+    Journal::instance()->info(QString("State vector address: 0x%1")
+                              .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
+
+    Journal::instance()->info(QString("State vector derivative address: 0x%1")
+                              .arg(reinterpret_cast<quint64>(dydt.data()), 0, 16));
+
+    // Reload of couplings
+    if (!loadCouplings(full_config_path))
+    {
+        Journal::instance()->error("Coupling model is't loaded");
+        return false;
+    }
+
+    if(was_empty)
+    {
+        double x0 = init_coord * 1000.0 - dir * this->getFirstVehicle()->getLength() / 2.0;
+        y[0] = x0;
+    }
+
+    Journal::instance()->info(QString("Vehicle[%2] coordinate: %1").arg(y[0]).arg(0, 3));
+
+    for (size_t i = 1; i < vehicles.size(); i++)
+    {
+        double Li_1 = vehicles[i-1]->getLength();
+        size_t idxi_1 = vehicles[i-1]->getIndex();
+
+        double Li = vehicles[i]->getLength();
+        size_t idxi = vehicles[i]->getIndex();
+
+        y[idxi] = y[idxi_1] - dir *(Li + Li_1) / 2;
+
+        Journal::instance()->info(QString("Vehicle[%2] coordinate: %1").arg(y[idxi]).arg(i, 3));
+    }
+
+    // Set initial conditions
+//    Journal::instance()->info("Setting up of initial conditions");
+//    setInitConditions(init_data);
+
+    // Brakepipe initialization
+    brakepipe = new BrakePipe();
+
+    Journal::instance()->info(QString("Created brakepipe object at address: 0x%1")
+                              .arg(reinterpret_cast<quint64>(brakepipe), 0, 16));
+
+    brakepipe->setLength(trainLength);
+    brakepipe->setNodesNum(vehicles.size());
+
+    if (!no_air)
+        brakepipe->setBeginPressure(charging_pressure * Physics::MPa + Physics::pA);
+
+    brakepipe->init(QString(fs.getConfigDir().c_str()) + fs.separator() + "brakepipe.xml");
+
+    initVehiclesBrakes();
+
+    return true;
+
+}
+
+bool Train::addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t)
+{
+/*
+    if(vehicles.isEmpty())
+        return false;
+
+    size_t index = ode_order;
+    for (auto it = vehicles_t.begin(); it != vehicles_t.end(); ++it)
+    {
+        (*it)->setDirection(dir);
+
+        trainMass += (*it)->getMass();
+        trainLength += (*it)->getLength();
+
+        size_t s = (*it)->getDegressOfFreedom();
+
+        ode_order += 2 * s;
+
+        (*it)->setIndex(index);
+        index = ode_order;
+
+        // Loading sounds
+        soundMan->loadSounds((*it)->getSoundsDir());
+
+        connect(*it, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
+        connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
+        connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
+
+        if (vehicles.size() !=0)
+        {
+            Vehicle *prev =  *(vehicles.end() - 1);
+            prev->setNextVehicle(*it);
+            (*it)->setPrevVehicle(prev);
+        }
+
+        this->vehicles.push_back(*it);
+    }
+*/
 }
 
 //------------------------------------------------------------------------------
