@@ -146,7 +146,7 @@ bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> 
 
     // Solver loading
     FileSystem &fs = FileSystem::getInstance();
-    QString solver_path = QString(fs.getLibraryDir().c_str()) + fs.separator() + solver_config.method;
+    QString solver_path = fs.getLibraryDir() + fs.separator() + solver_config.method;
 
     train_motion_solver = loadSolver(solver_path);
 
@@ -161,7 +161,7 @@ bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> 
 
     Journal::instance()->info("Loaded solver: " + solver_path);
 
-    full_config_path = QString(fs.getTrainsDir().c_str()) +
+    full_config_path = fs.getTrainsDir() +
             fs.separator() +
             init_data.train_config + ".xml";
 
@@ -661,7 +661,7 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
     if (!no_air)
         brakepipe->setBeginPressure(charging_pressure * Physics::MPa + Physics::pA);
 
-    brakepipe->init(QString(fs.getConfigDir().c_str()) + fs.separator() + "brakepipe.xml");
+    brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
 
     initVehiclesBrakes();
 

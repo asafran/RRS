@@ -14,7 +14,7 @@
 
 #include    "train-exterior.h"
 
-#include    "config-reader.h"
+#include    "CfgReader.h"
 #include    "get-value.h"
 #include    "filesystem.h"
 #include    "math-funcs.h"
@@ -189,113 +189,156 @@ void TrainExteriorHandler::keyboardHandler(int key)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void TrainExteriorHandler::load(const simulator_command_line_t &command_line)
+QVarLengthArray<Vehicle *> TrainExteriorHandler::load(const simulator_command_line_t &command_line)
 {
-    // Check train config name
-    if (!command_line.train_config.is_present)
-    {
-        std::cerr << "Train config is't referenced" << std::endl;
-        return;
-    }
+
 
     // Loading train config XML-file
     FileSystem &fs = FileSystem::getInstance();
-    std::string path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value.toStdString() + ".xml");
+    QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value + ".xml");
+    init_data_t init_data;
+    QVarLengthArray<Vehicle *> vehicles;
 
-    ConfigReader cfg(path);
-
-    if (!cfg.isOpenned())
+    CfgReader cfg;
+    // Check train config name
+    if (!command_line.train_config.is_present)
     {
-        std::cerr << "Train's config file " << path << " is't opened" << std::endl;
-        return;
+//        std::cerr << "Train config is't referenced" << std::endl;
+        return vehicles;
+    }
+    if (!cfg.load(path))
+    {
+//        std::cerr << "Train's config file " << path.toStdString() << " is't opened" << std::endl;
+        return vehicles;
+    }
+    // Get charging pressure and no air flag
+    if (!cfg.getDouble("Common", "ChargingPressure", init_data.charging_pressure))
+    {
+        init_data.charging_pressure = 0.5;
     }
 
-    osgDB::XmlNode *config_node = cfg.getConfigNode();
-
-    if (config_node == nullptr)
+    if (!cfg.getDouble("Common", "InitMainResPressure", init_data.init_main_res_pressure))
     {
-        std::cerr << "There is no Config node in file " << path << std::endl;
-        return;
+        init_data.init_main_res_pressure = 0.9;
     }
 
+    if (!cfg.getBool("Common", "NoAir", init_data.no_air))
+    {
+        init_data.no_air = false;
+    }
+
+    QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
     // Parsing of train config file
-    for (auto it = config_node->children.begin(); it != config_node->children.end(); ++it)
+
+    while (vehicle_node.isNull())
     {
-        osgDB::XmlNode *child = *it;
-
-        // Check that node is Vehicle node
-        if (child->name == "Vehicle")
+        QString module_name = "";
+        if (!cfg.getString(vehicle_node, "Module", module_name))
         {
-            int count = 0;
-
-            osgDB::XmlNode *count_node = cfg.findSection(child, "Count");
-
-            if (count_node == nullptr)
-            {
-                std::cerr << "Number of vehicles is't referenced" << std::endl;
-                continue;
-            }
-
-            // Read vehicles number
-            getValue(count_node->contents, count);
-
-            std::string module_config_name = "";
-
-            osgDB::XmlNode *module_config_node = cfg.findSection(child, "ModuleConfig");
-
-            if (module_config_node == nullptr)
-            {
-                std::cerr << "Vehicle module config is't referenced" << std::endl;
-                continue;
-            }
-
-            // Load vehicle body model
-            getValue(module_config_node->contents, module_config_name);            
-
-            for (int i = 0; i < count; ++i)
-            {
-                osg::ref_ptr<osg::Group> vehicle_model = loadVehicle(module_config_name);
-
-                if (!vehicle_model.valid())
-                {
-                    std::cerr << "Vehicle model " << module_config_name << " is't loaded" << std::endl;
-                    continue;
-                }
-
-                // Load cabine model
-                osg::ref_ptr<osg::Node> cabine;
-                loadCabine(vehicle_model.get(), module_config_name, cabine);
-
-                float length = getLength(module_config_name);
-
-                osg::Vec3 driver_pos = getDirverPosition(module_config_name);
-
-                vehicle_exterior_t vehicle_ext;
-                vehicle_ext.transform = new osg::MatrixTransform;
-                vehicle_ext.transform->addChild(vehicle_model.get());                
-                vehicle_ext.length = length;
-                vehicle_ext.cabine = cabine;
-                vehicle_ext.driver_pos = driver_pos;
-
-                vehicle_ext.anims = new animations_t();
-                vehicle_ext.displays = new displays_t();
-
-                loadModelAnimations(module_config_name, vehicle_model.get(), *vehicle_ext.anims);
-                loadAnimations(module_config_name, vehicle_model.get(), *vehicle_ext.anims);
-                loadAnimations(module_config_name, cabine.get(), *vehicle_ext.anims);
-
-                anim_managers.push_back(new AnimationManager(vehicle_ext.anims));
-
-                loadDisplays(cfg, child, cabine.get(), *vehicle_ext.displays);
-
-                vehicles_ext.push_back(vehicle_ext);
-                trainExterior->addChild(vehicle_ext.transform.get());
-            }
+//            Journal::instance()->error("Module section is not found");
+            break;
         }
+
+        QString q_module_cfg_name = "";
+        if (!cfg.getString(vehicle_node, "ModuleConfig", q_module_cfg_name))
+        {
+//            Journal::instance()->error("Module config file name is not found");
+            break;
+        }
+
+        std::string module_cfg_name(q_module_cfg_name.toStdString());
+
+        // Calculate module library path
+        QString relModulePath = QString(fs.combinePath(module_name, module_name));
+
+        int n_vehicles = 0;
+
+        if (!cfg.getInt(vehicle_node, "Count", n_vehicles))
+        {
+            n_vehicles = 0;
+//            Journal::instance()->warning("Count of vehicles " + module_name + " is not found. Vehicle will't loaded");
+        }
+
+        // Payload coefficient of vehicles group
+        double payload_coeff = 0;
+        if (!cfg.getDouble(vehicle_node, "PayloadCoeff", payload_coeff))
+        {
+            payload_coeff = 0;
+        }
+
+        for (int i = 0; i < n_vehicles; ++i)
+        {
+            osg::ref_ptr<osg::Group> vehicle_model = loadVehicleModel(module_cfg_name);
+
+            if (!vehicle_model.valid())
+            {
+                std::cerr << "Vehicle model " << module_cfg_name << " is't loaded" << std::endl;
+                continue;
+            }
+
+            // Load cabine model
+            osg::ref_ptr<osg::Node> cabine;
+            loadCabine(vehicle_model.get(), module_cfg_name, cabine);
+
+            float length = getLength(module_cfg_name);
+/*
+            osg::Vec3 driver_pos = getDirverPosition(module_cfg_name);
+
+            vehicle_exterior_t vehicle_ext;
+            vehicle_ext.transform = new osg::MatrixTransform;
+            vehicle_ext.transform->addChild(vehicle_model.get());
+            vehicle_ext.length = length;
+            vehicle_ext.cabine = cabine;
+            vehicle_ext.driver_pos = driver_pos;
+
+            vehicle_ext.anims = new animations_t();
+            vehicle_ext.displays = new displays_t();
+
+            loadModelAnimations(module_cfg_name, vehicle_model.get(), *vehicle_ext.anims);
+            loadAnimations(module_cfg_name, vehicle_model.get(), *vehicle_ext.anims);
+            loadAnimations(module_cfg_name, cabine.get(), *vehicle_ext.anims);
+
+            anim_managers.push_back(new AnimationManager(vehicle_ext.anims));
+
+            loadDisplays(cfg, child, cabine.get(), *vehicle_ext.displays);
+
+            vehicles_ext.push_back(vehicle_ext);
+            trainExterior->addChild(vehicle_ext.transform.get());
+
+            */
+            Vehicle *vehicle = loadVehicle(fs.getModulesDir() +
+                                           fs.separator() +
+                                           relModulePath);
+
+            if (vehicle == Q_NULLPTR)
+            {
+//                    Journal::instance()->error("Vehicle " + module_name + " is't loaded");
+                break;
+            }
+
+//                Journal::instance()->info(QString("Created Vehicle object at address: 0x%1")
+//                                          .arg(reinterpret_cast<quint64>(vehicle), 0, 16));
+
+
+            QString relConfigPath = fs.combinePath(q_module_cfg_name, q_module_cfg_name);
+
+
+            QString config_dir(fs.combinePath(fs.getVehiclesDir(), q_module_cfg_name));
+            vehicle->setConfigDir(config_dir);
+
+            vehicle->init(fs.getVehiclesDir() + fs.separator() + relConfigPath + ".xml");
+
+            vehicle->setPayloadCoeff(payload_coeff);
+
+            vehicles.push_back(vehicle);
+
+        }
+        vehicle_node = cfg.getNextSection();
+
     }
 
     //animation_manager = new AnimationManager(&animations);
-    this->startTimer(100);
+    return vehicles;
 }
 
 //------------------------------------------------------------------------------
@@ -343,7 +386,106 @@ void TrainExteriorHandler::moveTrain(double ref_time, const network_data_t &nd)
         }        
     }    
 }
+/*
+bool TrainExteriorHandler::loadTrain(QString cfg_path)
+{
+    CfgReader cfg;
+    FileSystem &fs = FileSystem::getInstance();
+    QVarLengthArray<Vehicle *> vehicles;
 
+    if (cfg.load(cfg_path))
+    {
+        init_data_t init_data;
+        // Get charging pressure and no air flag
+        if (!cfg.getDouble("Common", "ChargingPressure", init_data.charging_pressure))
+        {
+            init_data.charging_pressure = 0.5;
+        }
+
+        if (!cfg.getDouble("Common", "InitMainResPressure", init_data.init_main_res_pressure))
+        {
+            init_data.init_main_res_pressure = 0.9;
+        }
+
+        if (!cfg.getBool("Common", "NoAir", init_data.no_air))
+        {
+            init_data.no_air = false;
+        }
+
+        QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
+
+        if (vehicle_node.isNull())
+//            Journal::instance()->error("There are not Vehicle sections in train config");
+
+        size_t index = 0;
+
+        while (!vehicle_node.isNull())
+        {
+            QString module_name = "";
+            if (!cfg.getString(vehicle_node, "Module", module_name))
+            {
+//                Journal::instance()->error("Module section is not found");
+                break;
+            }
+
+            QString module_cfg_name = "";
+            if (!cfg.getString(vehicle_node, "ModuleConfig", module_cfg_name))
+            {
+//                Journal::instance()->error("Module config file name is not found");
+                break;
+            }
+
+            // Calculate module library path
+            QString relModulePath = QString(fs.combinePath(module_name.toStdString(), module_name.toStdString()).c_str());
+
+            // Vehicles count
+            int n_vehicles = 0;
+            if (!cfg.getInt(vehicle_node, "Count", n_vehicles))
+            {
+                n_vehicles = 0;
+//                Journal::instance()->warning("Count of vehicles " + module_name + " is not found. Vehicle will't loaded");
+            }
+
+            // Payload coefficient of vehicles group
+            double payload_coeff = 0;
+            if (!cfg.getDouble(vehicle_node, "PayloadCoeff", payload_coeff))
+            {
+                payload_coeff = 0;
+            }
+
+            for (int i = 0; i < n_vehicles; i++)
+            {
+                Vehicle *vehicle = loadVehicle(QString(fs.getModulesDir().c_str()) +
+                                               fs.separator() +
+                                               relModulePath);
+
+                if (vehicle == Q_NULLPTR)
+                {
+//                    Journal::instance()->error("Vehicle " + module_name + " is't loaded");
+                    break;
+                }
+
+//                Journal::instance()->info(QString("Created Vehicle object at address: 0x%1")
+//                                          .arg(reinterpret_cast<quint64>(vehicle), 0, 16));
+
+
+                QString relConfigPath = QString(fs.combinePath(module_cfg_name.toStdString(), module_cfg_name.toStdString()).c_str());
+
+
+                QString config_dir(fs.combinePath(fs.getVehiclesDir(), module_cfg_name.toStdString()).c_str());
+                vehicle->setConfigDir(config_dir);
+
+                vehicle->init(QString(fs.getVehiclesDir().c_str()) + fs.separator() + relConfigPath + ".xml");
+
+                vehicle->setPayloadCoeff(payload_coeff);
+
+                vehicles.push_back(vehicle);
+            }
+
+            vehicle_node = cfg.getNextSection();
+        }
+}
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------

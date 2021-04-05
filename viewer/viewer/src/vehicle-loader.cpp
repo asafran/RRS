@@ -94,7 +94,7 @@ osg::Node *loadModel(const std::string &modelName, const std::string &textureNam
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-osg::Group *loadVehicle(const std::string &configPath)
+osg::Group *loadVehicleModel(const std::string &configPath)
 {
     // Group node for vehicle model loading
     osg::ref_ptr<osg::Group> group = new osg::Group;

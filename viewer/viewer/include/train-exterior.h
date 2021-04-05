@@ -115,7 +115,7 @@ private:
     void keyboardHandler(int key);
 
     /// Load train exterior from
-    void load(const simulator_command_line_t &command_line);
+    QVarLengthArray<Vehicle *> load(const simulator_command_line_t &command_line);
 
     /// Moving train along track
     void moveTrain(double ref_time, const network_data_t &nd);
