@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void FileSystem::setRouteRootDir(const std::string &path)
+void FileSystem::setRouteRootDir(const QString &path)
 {
     routeRootDir = getNativePath(path);
 }
@@ -11,7 +11,7 @@ void FileSystem::setRouteRootDir(const std::string &path)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void FileSystem::setConfigDir(const std::string &path)
+void FileSystem::setConfigDir(const QString &path)
 {
     configDir = getNativePath(path);
 }
@@ -19,77 +19,77 @@ void FileSystem::setConfigDir(const std::string &path)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void FileSystem::setLogsDir(const std::string &path)
+void FileSystem::setLogsDir(const QString &path)
 {
     logsDir = getNativePath(path);
 }
 
-void FileSystem::setLibraryDir(const std::string &path)
+void FileSystem::setLibraryDir(const QString &path)
 {
     libraryDir = getNativePath(path);
 }
 
-void FileSystem::setTrainsDir(const std::string &path)
+void FileSystem::setTrainsDir(const QString &path)
 {
     trainsDir = getNativePath(path);
 }
 
-void FileSystem::setModulesDir(const std::string &path)
+void FileSystem::setModulesDir(const QString &path)
 {
     modulesDir = getNativePath(path);
 }
 
-void FileSystem::setVehiclesDir(const std::string &path)
+void FileSystem::setVehiclesDir(const QString &path)
 {
     vehiclesDir = getNativePath(path);
 }
 
-void FileSystem::setCouplingsDir(const std::string &path)
+void FileSystem::setCouplingsDir(const QString &path)
 {
     couplingsDir = getNativePath(path);
 }
 
-void FileSystem::setDevicesDir(const std::string &path)
+void FileSystem::setDevicesDir(const QString &path)
 {
     devicesDir = getNativePath(path);
 }
 
-void FileSystem::setBinaryDir(const std::string &path)
+void FileSystem::setBinaryDir(const QString &path)
 {
     binDir = getNativePath(path);
 }
 
-void FileSystem::setPluginsDir(const std::string &path)
+void FileSystem::setPluginsDir(const QString &path)
 {
     pluginsDir = getNativePath(path);
 }
 
-void FileSystem::setDataDir(const std::string &path)
+void FileSystem::setDataDir(const QString &path)
 {
     dataDir = getNativePath(path);
 }
 
-void FileSystem::setVehicleModelsDir(const std::string &path)
+void FileSystem::setVehicleModelsDir(const QString &path)
 {
     vehicleModelsDir = getNativePath(path);
 }
 
-void FileSystem::setVehicleTexturesDir(const std::string &path)
+void FileSystem::setVehicleTexturesDir(const QString &path)
 {
     vehicleTexturesDir = getNativePath(path);
 }
 
-void FileSystem::setScreenshotsDir(const std::string &path)
+void FileSystem::setScreenshotsDir(const QString &path)
 {
     screenshotsDir = getNativePath(path);
 }
 
-void FileSystem::setFontsDir(const std::string &path)
+void FileSystem::setFontsDir(const QString &path)
 {
     fontsDir = getNativePath(path);
 }
 
-void FileSystem::setSoundsDir(const std::string &path)
+void FileSystem::setSoundsDir(const QString &path)
 {
     soundsDir = getNativePath(path);
 }
@@ -97,7 +97,7 @@ void FileSystem::setSoundsDir(const std::string &path)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void FileSystem::setThemeDir(const std::string &path)
+void FileSystem::setThemeDir(const QString &path)
 {
     themeDir = getNativePath(path);
 }
@@ -105,7 +105,7 @@ void FileSystem::setThemeDir(const std::string &path)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getRouteRootDir() const
+QString FileSystem::getRouteRootDir() const
 {
     return routeRootDir;
 }
@@ -113,7 +113,7 @@ std::string FileSystem::getRouteRootDir() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getConfigDir() const
+QString FileSystem::getConfigDir() const
 {
     return configDir;
 }
@@ -121,7 +121,7 @@ std::string FileSystem::getConfigDir() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getLogsDir() const
+QString FileSystem::getLogsDir() const
 {
     return logsDir;
 }
@@ -129,7 +129,7 @@ std::string FileSystem::getLogsDir() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getLibraryDir() const
+QString FileSystem::getLibraryDir() const
 {
     return libraryDir;
 }
@@ -137,72 +137,72 @@ std::string FileSystem::getLibraryDir() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getTrainsDir() const
+QString FileSystem::getTrainsDir() const
 {
     return trainsDir;
 }
 
-std::string FileSystem::getModulesDir() const
+QString FileSystem::getModulesDir() const
 {
     return modulesDir;
 }
 
-std::string FileSystem::getVehiclesDir() const
+QString FileSystem::getVehiclesDir() const
 {
     return vehiclesDir;
 }
 
-std::string FileSystem::getCouplingsDir() const
+QString FileSystem::getCouplingsDir() const
 {
     return couplingsDir;
 }
 
-std::string FileSystem::getDevicesDir() const
+QString FileSystem::getDevicesDir() const
 {
     return devicesDir;
 }
 
-std::string FileSystem::getBinaryDir() const
+QString FileSystem::getBinaryDir() const
 {
     return binDir;
 }
 
-std::string FileSystem::getPluginsDir() const
+QString FileSystem::getPluginsDir() const
 {
     return  pluginsDir;
 }
 
-std::string FileSystem::getDataDir() const
+QString FileSystem::getDataDir() const
 {
     return dataDir;
 }
 
-std::string FileSystem::getVehicleModelsDir() const
+QString FileSystem::getVehicleModelsDir() const
 {
     return vehicleModelsDir;
 }
 
-std::string FileSystem::getVehicleTexturesDir() const
+QString FileSystem::getVehicleTexturesDir() const
 {
     return vehicleTexturesDir;
 }
 
-std::string FileSystem::getScreenshotsDir() const
+QString FileSystem::getScreenshotsDir() const
 {
     return screenshotsDir;
 }
 
-std::string FileSystem::getFontsDir() const
+QString FileSystem::getFontsDir() const
 {
     return fontsDir;
 }
 
-std::string FileSystem::getSoundsDir() const
+QString FileSystem::getSoundsDir() const
 {
     return soundsDir;
 }
 
-std::string FileSystem::getThemeDir() const
+QString FileSystem::getThemeDir() const
 {
     return themeDir;
 }
@@ -210,7 +210,7 @@ std::string FileSystem::getThemeDir() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::combinePath(const std::string &path1, const std::string &path2)
+QString FileSystem::combinePath(const QString &path1, const QString &path2)
 {
     if (*(path1.end() - 1) != separator())
         return getNativePath(path1 + separator() + path2);
@@ -221,9 +221,9 @@ std::string FileSystem::combinePath(const std::string &path1, const std::string 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::toNativeSeparators(const std::string &path)
+QString FileSystem::toNativeSeparators(const QString &path)
 {
-    std::string tmp = path;
+    QString tmp = path;
 
 #if __unix__
     std::replace(tmp.begin(), tmp.end(), '\\', '/');
@@ -237,9 +237,9 @@ std::string FileSystem::toNativeSeparators(const std::string &path)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getNativePath(const std::string &path)
+QString FileSystem::getNativePath(const QString &path)
 {
-    return QDir::toNativeSeparators(QString(path.c_str())).toStdString();
+    return QDir::toNativeSeparators(path);
 }
 
 //------------------------------------------------------------------------------
@@ -253,14 +253,14 @@ char FileSystem::separator() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-std::string FileSystem::getLevelUpDirectory(std::string path, int num_levels)
+QString FileSystem::getLevelUpDirectory(QString path, int num_levels)
 {
-    QDir dir(QString(path.c_str()));
+    QDir dir(path);
 
     for (int i = 0; i < num_levels; ++i)
         dir.cdUp();
 
     QString tmp = dir.path() + QDir::separator();
 
-    return tmp.toStdString();
+    return tmp;
 }

@@ -21,8 +21,8 @@ public:
     {
         static FileSystem instance;
 
-        std::string workDir = QDir::currentPath().toStdString();
-        std::string tmp = instance.getLevelUpDirectory(workDir, 1);
+        QString workDir = QDir::currentPath();
+        QString tmp = instance.getLevelUpDirectory(workDir, 1);
         instance.setBinaryDir(workDir);
         instance.setRouteRootDir(tmp + "routes");
         instance.setConfigDir(tmp + "cfg");
@@ -46,120 +46,120 @@ public:
     }    
 
     /// Get directory by num_levels levels up
-    std::string getLevelUpDirectory(std::string path, int num_levels);
+    QString getLevelUpDirectory(QString path, int num_levels);
 
-    std::string getNativePath(const std::string &path);
+    QString getNativePath(const QString &path);
 
     /// Get route directory path
-    std::string getRouteRootDir() const;    
+    QString getRouteRootDir() const;
 
-    std::string getConfigDir() const;
+    QString getConfigDir() const;
 
-    std::string getLogsDir() const;
+    QString getLogsDir() const;
 
-    std::string getLibraryDir() const;
+    QString getLibraryDir() const;
 
-    std::string getTrainsDir() const;
+    QString getTrainsDir() const;
 
-    std::string getModulesDir() const;
+    QString getModulesDir() const;
 
-    std::string getVehiclesDir() const;
+    QString getVehiclesDir() const;
 
-    std::string getCouplingsDir() const;
+    QString getCouplingsDir() const;
 
-    std::string getDevicesDir() const;
+    QString getDevicesDir() const;
 
-    std::string getBinaryDir() const;
+    QString getBinaryDir() const;
 
-    std::string getPluginsDir() const;
+    QString getPluginsDir() const;
 
-    std::string getDataDir() const;
+    QString getDataDir() const;
 
-    std::string getVehicleModelsDir() const;
+    QString getVehicleModelsDir() const;
 
-    std::string getVehicleTexturesDir() const;
+    QString getVehicleTexturesDir() const;
 
-    std::string getScreenshotsDir() const;
+    QString getScreenshotsDir() const;
 
-    std::string getFontsDir() const;
+    QString getFontsDir() const;
 
-    std::string getSoundsDir() const;
+    QString getSoundsDir() const;
 
-    std::string getThemeDir() const;
+    QString getThemeDir() const;
 
-    std::string combinePath(const std::string &path1, const std::string &path2);
+    QString combinePath(const QString &path1, const QString &path2);
 
-    std::string toNativeSeparators(const std::string &path);
+    QString toNativeSeparators(const QString &path);
 
     /// Get native path separator
     char separator() const;
 
 private:
 
-    std::string routeRootDir;
-    std::string configDir;
-    std::string logsDir;
-    std::string libraryDir;
-    std::string trainsDir;
-    std::string modulesDir;
-    std::string vehiclesDir;
-    std::string couplingsDir;
-    std::string devicesDir;
-    std::string binDir;
-    std::string pluginsDir;
+    QString routeRootDir;
+    QString configDir;
+    QString logsDir;
+    QString libraryDir;
+    QString trainsDir;
+    QString modulesDir;
+    QString vehiclesDir;
+    QString couplingsDir;
+    QString devicesDir;
+    QString binDir;
+    QString pluginsDir;
 
-    std::string dataDir;
-    std::string vehicleModelsDir;
-    std::string vehicleTexturesDir;
+    QString dataDir;
+    QString vehicleModelsDir;
+    QString vehicleTexturesDir;
 
-    std::string screenshotsDir;
-    std::string fontsDir;
+    QString screenshotsDir;
+    QString fontsDir;
 
-    std::string soundsDir;
+    QString soundsDir;
 
-    std::string themeDir;
+    QString themeDir;
 
     FileSystem() {}
     FileSystem(const FileSystem &) = delete;
     FileSystem &operator=(FileSystem &) = delete;
 
     /// Set route direcory path in paltform native format
-    void setRouteRootDir(const std::string &path);
+    void setRouteRootDir(const QString &path);
 
     /// Set config directory path
-    void setConfigDir(const std::string &path);
+    void setConfigDir(const QString &path);
 
-    void setLogsDir(const std::string &path);
+    void setLogsDir(const QString &path);
 
-    void setLibraryDir(const std::string &path);
+    void setLibraryDir(const QString &path);
 
-    void setTrainsDir(const std::string &path);
+    void setTrainsDir(const QString &path);
 
-    void setModulesDir(const std::string &path);
+    void setModulesDir(const QString &path);
 
-    void setVehiclesDir(const std::string &path);
+    void setVehiclesDir(const QString &path);
 
-    void setCouplingsDir(const std::string &path);
+    void setCouplingsDir(const QString &path);
 
-    void setDevicesDir(const std::string &path);
+    void setDevicesDir(const QString &path);
 
-    void setBinaryDir(const std::string &path);
+    void setBinaryDir(const QString &path);
 
-    void setPluginsDir(const std::string &path);
+    void setPluginsDir(const QString &path);
 
-    void setDataDir(const std::string &path);
+    void setDataDir(const QString &path);
 
-    void setVehicleModelsDir(const std::string &path);
+    void setVehicleModelsDir(const QString &path);
 
-    void setVehicleTexturesDir(const std::string &path);
+    void setVehicleTexturesDir(const QString &path);
 
-    void setScreenshotsDir(const std::string &path);
+    void setScreenshotsDir(const QString &path);
 
-    void setFontsDir(const std::string &path);
+    void setFontsDir(const QString &path);
 
-    void setSoundsDir(const std::string &path);
+    void setSoundsDir(const QString &path);
 
-    void setThemeDir(const std::string &path);
+    void setThemeDir(const QString &path);
 };
 
 #endif
