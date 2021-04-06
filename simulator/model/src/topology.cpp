@@ -53,7 +53,7 @@ bool Topology::load(QString route_dir)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Topology::init(const topology_pos_t &tp, std::vector<Vehicle *> *vehicles)
+bool Topology::init(const topology_pos_t &tp, QVarLengthArray<Vehicle *> *vehicles)
 {
     if (vehicles->empty())
     {

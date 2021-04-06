@@ -18,6 +18,7 @@
 #include    "CfgReader.h"
 #include    "physics.h"
 #include    "Journal.h"
+#include    "connector.h"
 
 #include    <QLibrary>
 #include    <QDir>
@@ -27,7 +28,7 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Vehicle::Vehicle(QObject *parent) : QObject(parent)
+Vehicle::Vehicle(QObject *parent) : VehicleController(parent)
   , VehicleData()
   , idx(0)
   , empty_mass(24000.0)
@@ -363,6 +364,8 @@ void Vehicle::integrationStep(state_vector_t &Y, double t, double dt)
     integrationPreStep(Y, t);
     step(t, dt);
     integrationPostStep(Y, t);
+    topologyStep();
+
 }
 
 //------------------------------------------------------------------------------
@@ -380,6 +383,68 @@ void Vehicle::integrationPostStep(state_vector_t &Y, double t)
     }
 
     postStep(t);
+}
+
+void Vehicle::topologyStep()
+{
+    x_prev = x_cur;
+    x_cur = railway_coord;
+
+    double prev_coord = traj_coord;
+
+    traj_coord += dir * (x_cur - x_prev);
+
+    prev_traj = current_traj;
+
+    while (traj_coord > current_traj->getLength())
+    {
+        Connector *conn = current_traj->getFwdConnector();
+
+        if (conn == Q_NULLPTR)
+        {
+            traj_coord = prev_coord;
+            return;
+        }
+
+        traj_coord = traj_coord - current_traj->getLength();
+
+        current_traj = conn->getFwdTraj();
+
+        if (current_traj == Q_NULLPTR)
+        {
+            current_traj = prev_traj;
+            traj_coord = prev_coord;
+            break;
+        }
+    }
+
+    while (traj_coord < 0)
+    {
+        Connector *conn = current_traj->getBwdConnector();
+
+        if (conn == Q_NULLPTR)
+        {
+            traj_coord = prev_coord;
+            return;
+        }
+
+        current_traj = conn->getBwdTraj();
+
+        if (current_traj == Q_NULLPTR)
+        {
+            current_traj = prev_traj;
+            traj_coord = prev_coord;
+            break;
+        }
+
+        traj_coord = current_traj->getLength() + traj_coord;
+    }
+
+    if (current_traj != prev_traj)
+    {
+        prev_traj->setBusy(false);
+        current_traj->setBusy(true);
+    }
 }
 
 //------------------------------------------------------------------------------

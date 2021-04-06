@@ -3,11 +3,12 @@
 #include    "CfgReader.h"
 #include    "physics.h"
 #include    "Journal.h"
+#include    "connector.h"
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeSystem(parent)
+Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(parent)
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
@@ -19,7 +20,8 @@ Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeS
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
-  , time_controls(controls)
+  , topo(topology)
+
 {
 
 }
@@ -27,8 +29,7 @@ Train::Train(Profile *profile, time_controls_t controls, QObject *parent) : OdeS
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Train::Train(Profile *profile, const QVarLengthArray<Vehicle *> vehicles, time_controls_t controls,
-             init_data_t init_data, QObject *parent) : OdeSystem(parent)
+Train::Train(Profile *profile, Topology *topology, init_data_t init_data, QObject *parent) : OdeSystem(parent)
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
@@ -42,9 +43,10 @@ Train::Train(Profile *profile, const QVarLengthArray<Vehicle *> vehicles, time_c
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
-  , time_controls(controls)
+  , topo(topology)
+  , train_config_path(init_data.train_config)
+  , solver_config(init_data.solver_config)
 {
-    init(init_data, vehicles);
 }
 //------------------------------------------------------------------------------
 //
@@ -138,12 +140,8 @@ Train::~Train()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t)
-{
-    solver_config = init_data.solver_config;    
-
-//    dir = init_data.direction;
-
+bool Train::init(const QVarLengthArray<Vehicle *> vehicles_t)
+{  
     // Solver loading
     FileSystem &fs = FileSystem::getInstance();
     QString solver_path = fs.getLibraryDir() + fs.separator() + solver_config.method;
@@ -161,11 +159,10 @@ bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> 
 
     Journal::instance()->info("Loaded solver: " + solver_path);
 
-    full_config_path = fs.getTrainsDir() +
-            fs.separator() +
-            init_data.train_config + ".xml";
 
-    Journal::instance()->info("Train config from file: " + full_config_path);
+    Journal::instance()->info("Train config from file: " + fs.getTrainsDir() +
+                              fs.separator() +
+                              train_config_path + ".xml");
 
     try
     {
@@ -185,6 +182,82 @@ bool Train::init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> 
         Journal::instance()->error("Train is't loaded");
         return false;
     }
+
+}
+
+void Train::placeTrain(const topology_pos_t &tp)
+{
+    if (vehicles.isEmpty())
+    {
+        return;
+    }
+
+    vehicles[0]->setTrajCoord(tp.traj_coord);
+    vehicles[0]->setInitCurrentTraj(topo->getTrajList()[tp.traj_name]);
+    vehicles[0]->setDirection(tp.dir);
+    vehicles[0]->setInitRailwayCoord(vehicles[0]->getRailwayCoord());
+
+    double traj_coord = tp.traj_coord;
+    Trajectory *cur_traj = topo->getTrajList()[tp.traj_name];
+
+    cur_traj->setBusy(vehicles[0]);
+
+    for (auto i = vehicles.begin(); i != vehicles.end(); ++i)
+    {
+        double L = (*(i-1))->getLength() + (*i)->getLength() / 2.0;
+
+        traj_coord = traj_coord - tp.dir * L;
+
+        while (traj_coord < 0)
+        {
+            Connector *conn = cur_traj->getBwdConnector();
+
+            if (conn == Q_NULLPTR)
+            {
+                Journal::instance()->error("Error placing train on topology_pos_t");
+                return;
+            }
+
+            cur_traj = conn->getBwdTraj();
+
+            if (cur_traj == Q_NULLPTR)
+            {
+                Journal::instance()->error("Error placing train on topology_pos_t");
+                return;
+            }
+
+            traj_coord = cur_traj->getLength() + traj_coord;
+        }
+
+        while (traj_coord > cur_traj->getLength())
+        {
+            traj_coord = traj_coord - cur_traj->getLength();
+
+            Connector *conn = cur_traj->getFwdConnector();
+
+            if (conn == Q_NULLPTR)
+            {
+                Journal::instance()->error("Error placing train on topology_pos_t");
+                return;
+            }
+
+            cur_traj = conn->getFwdTraj();
+
+            if (cur_traj == Q_NULLPTR)
+            {
+                Journal::instance()->error("Error placing train on topology_pos_t");
+                return;
+            }
+        }
+
+        (*i)->setTrajCoord(traj_coord);
+        (*i)->setInitCurrentTraj(cur_traj);
+        (*i)->setDirection(tp.dir);
+        (*i)->setInitRailwayCoord((*i)->getRailwayCoord());
+
+        cur_traj->setBusy(*i);
+    }
+    Journal::instance()->info("Train placed on topology_pos_t");
 
 }
 
@@ -274,13 +347,10 @@ void Train::vehiclesStep(double t, double dt)
     for (auto i = begin; i != end; ++i)
     {
         Vehicle *vehicle = *i;
-        VehicleController *vc = static_cast<VehicleController *>(*i);
 
         brakepipe->setAuxRate(j, vehicle->getBrakepipeAuxRate());
         vehicle->setBrakepipePressure(brakepipe->getPressure(j));
         vehicle->integrationStep(y, t, dt);
-
-        vc->setRailwayCoord(vehicle->getRailwayCoord());
 
         ++j;
     }
@@ -557,6 +627,8 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
     size_t index = ode_order;
     bool was_empty = vehicles.isEmpty();
 
+    Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(index));
+
     for (auto it = vehicles_t.begin(); it != vehicles_t.end(); ++it)
     {
         connect(*it, &Vehicle::logMessage, this, &Train::logMessage);
@@ -566,12 +638,18 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
         trainMass += (*it)->getMass();
         trainLength += (*it)->getLength();
 
+        Journal::instance()->info(QString("Update train mass and lenght: %1, %2").arg(trainMass).arg(trainLength));
+
         size_t s = (*it)->getDegressOfFreedom();
 
         ode_order += 2 * s;
 
+        Journal::instance()->info(QString("Set index %1").arg(index));
+
         (*it)->setIndex(index);
         index = ode_order;
+
+        Journal::instance()->info(QString("Update index %1, connecting sound manager").arg(index));
 
         // Loading sounds
         soundMan->loadSounds((*it)->getSoundsDir());
@@ -582,15 +660,22 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
         connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
         connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
 
+        Journal::instance()->info(QString("Set prev/next pointers"));
+
         if (vehicles.size() !=0)
         {
             Vehicle *prev =  *(vehicles.end() - 1);
             prev->setNextVehicle(*it);
             (*it)->setPrevVehicle(prev);
+            Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
+                                      .arg(reinterpret_cast<quint64>(prev), 0, 16)
+                                      .arg(reinterpret_cast<quint64>(*it), 0, 16));
         }
 
         y.resize(ode_order);
         dydt.resize(ode_order);
+
+        Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
 
         if(vehicles.isEmpty())
             y[index + s] = init_velocity / Physics::kmh;
@@ -604,12 +689,10 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
             y[index + s + j] = y[index + s] / wheel_radius;
         }
 
+
         this->vehicles.push_back(*it);
 
     }
-
-
-    Journal::instance()->info(QString("Allocated memory for %1 ODE's").arg(ode_order));
 
     Journal::instance()->info(QString("State vector address: 0x%1")
                               .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
@@ -618,7 +701,9 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
                               .arg(reinterpret_cast<quint64>(dydt.data()), 0, 16));
 
     // Reload of couplings
-    if (!loadCouplings(full_config_path))
+    if (!loadCouplings(fs.getTrainsDir() +
+                       fs.separator() +
+                       train_config_path + ".xml"))
     {
         Journal::instance()->error("Coupling model is't loaded");
         return false;
@@ -663,7 +748,7 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
 
     brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
 
-    initVehiclesBrakes();
+    initVehiclesBrakes(); 
 
     return true;
 
@@ -734,7 +819,7 @@ bool Train::loadCouplings(QString cfg_path)
 
         for (int i = 0; i < num_couplings; i++)
         {
-            Coupling *coupling = loadCoupling(QString(fs.getModulesDir().c_str()) +
+            Coupling *coupling = loadCoupling(fs.getModulesDir() +
                                               fs.separator() +
                                               coupling_module);
 
@@ -748,7 +833,7 @@ bool Train::loadCouplings(QString cfg_path)
 
             Journal::instance()->info("Loaded coupling model from: " + coupling_module);
 
-            coupling->loadConfiguration(QString(fs.getCouplingsDir().c_str()) +
+            coupling->loadConfiguration(fs.getCouplingsDir() +
                                         fs.separator() +
                                         coupling_module + ".xml");
 
@@ -832,7 +917,7 @@ void Train::topologyStep()
         vc[i].setRailwayCoord(train->getVehicles()->at(i)->getRailwayCoord());
     }
 }
-*/
+
 void Train::process()
 {
     double tau = 0;
@@ -864,3 +949,4 @@ void Train::process()
         emit posDataReady(viewer_copy);
     }
 }
+*/

@@ -5,7 +5,7 @@
 #include    "vehicle-controller.h"
 #include    <vector>
 
-class VehicleData : public VehicleController
+class VehicleData
 {
 public:
     VehicleData();
@@ -50,6 +50,8 @@ protected:
     state_vector_t  Q_r;
     /// Vehicle common acceleration
     state_vector_t  a;
+
+//    vec3d position;
 
 };
 

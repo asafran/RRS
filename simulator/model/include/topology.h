@@ -25,11 +25,17 @@ public:
     /// Загрузка топологии ж/д полигона
     bool load(QString route_dir);
 
+    traj_list_t getTrajList() const { return traj_list; }
+
+    conn_list_t getJointsList() const { return joints; }
+
+    conn_list_t getSwithesList() const { return switches; }
+
     /// Общая инициализация
-    bool init(const topology_pos_t &tp, std::vector<Vehicle *> *vehicles);
+    bool init(const topology_pos_t &tp, QVarLengthArray<Vehicle *> *vehicles);
 
     /// Вернуть контроллер конкретной ПЕ
-    VehicleController *getVehicleController(size_t idx) const;
+//    VehicleController *getVehicleController(size_t idx) const;
 
 protected:
 
@@ -42,8 +48,8 @@ protected:
     /// Контейнер стрелок
     conn_list_t     switches;
 
-    /// Контейнер контроллеров ПЕ
-    std::vector<VehicleController *> vehicle_control;
+    /// Контейнер ПЕ
+    QSet<Vehicle *> vehicle_control;
 
     /// Получить список имен всех имеющихся траекторий
     QStringList getTrajNamesList(QString route_dir);

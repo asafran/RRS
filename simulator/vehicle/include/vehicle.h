@@ -41,7 +41,7 @@
 //
 //------------------------------------------------------------------------------
 
-class VEHICLE_EXPORT Vehicle : public QObject, public VehicleData
+class VEHICLE_EXPORT Vehicle : public VehicleController, public VehicleData
 {
     Q_OBJECT
 

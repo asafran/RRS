@@ -40,17 +40,11 @@ Model::Model(QObject *parent) : QObject(parent)
   , control_delay(0.05)
   , train(nullptr)
   , profile(nullptr)
-  , server(nullptr)
   , control_panel(nullptr)
+  , topology(nullptr)
+  , timerid(0)
 {
-    shared_memory.setKey("sim");
 
-    if (!shared_memory.create(sizeof(server_data_t)))
-    {
-        shared_memory.attach();
-    }    
-
-    sim_client = Q_NULLPTR;
 }
 
 //------------------------------------------------------------------------------
@@ -58,8 +52,7 @@ Model::Model(QObject *parent) : QObject(parent)
 //------------------------------------------------------------------------------
 Model::~Model()
 {
-    shared_memory.detach();
-    keys_data.detach();
+
 }
 
 //------------------------------------------------------------------------------
@@ -105,48 +98,183 @@ bool Model::init(const simulator_command_line_t &command_line)
 
     // Train creation and initialization
     Journal::instance()->info("==== Train initialization ====");
-    train = new Train(profile);
+    train = new Train(profile, init_data, this);
 
     Journal::instance()->info(QString("Created Train object at address: 0x%1")
                               .arg(reinterpret_cast<quint64>(train), 0, 16));
 
     connect(train, &Train::logMessage, this, &Model::logMessage);
 
-    if (!train->init(init_data))
+    if (!train->init(load(command_line)))
         return false;    
-
-    connect(this, &Model::sendDataToTrain, train, &Train::sendDataToVehicle);
-
-    keys_data.setKey("keys");    
-
-    if (!keys_data.create(init_data.keys_buffer_size))
-    {
-        if (!keys_data.attach())
-        {
-            Journal::instance()->error("Can't attach to shread memory. Unable process keyboard");
-        }
-    }
-    else
-    {
-        Journal::instance()->info("Created shared memory for keysboard processing");
-    }
 
     initControlPanel("control-panel");
 
-    initSimClient("virtual-railway");
+//    initSimClient("virtual-railway");
 
     Journal::instance()->info("Train is initialized successfully");
 
 
-    /*topology.load(init_data.route_dir);
+    topology.load(init_data.route_dir);
     topology_pos_t tp;
     tp.traj_name = "s01-chp1";
     tp.traj_coord = 700.0;
     tp.dir = 1;
 
-    topology.init(tp, train->getVehicles());*/
+    topology.init(tp, train->getVehicles());
 
     return true;
+}
+
+QVarLengthArray<Vehicle *> Model::load(const simulator_command_line_t &command_line)
+{
+    // Loading train config XML-file
+    FileSystem &fs = FileSystem::getInstance();
+    QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value + ".xml");
+    init_data_t init_data;
+    QVarLengthArray<Vehicle *> vehicles;
+
+    CfgReader cfg;
+    // Check train config name
+    if (!command_line.train_config.is_present)
+    {
+        Journal::instance()->error("Train config is't referenced");
+        return vehicles;
+    }
+    if (!cfg.load(path))
+    {
+        Journal::instance()->error("Train's config file" + path + "is't opened");
+        return vehicles;
+    }
+    // Get charging pressure and no air flag
+    if (!cfg.getDouble("Common", "ChargingPressure", init_data.charging_pressure))
+    {
+        init_data.charging_pressure = 0.5;
+    }
+
+    if (!cfg.getDouble("Common", "InitMainResPressure", init_data.init_main_res_pressure))
+    {
+        init_data.init_main_res_pressure = 0.9;
+    }
+
+    if (!cfg.getBool("Common", "NoAir", init_data.no_air))
+    {
+        init_data.no_air = false;
+    }
+
+    QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
+    // Parsing of train config file
+
+    while (vehicle_node.isNull())
+    {
+        QString module_name = "";
+        if (!cfg.getString(vehicle_node, "Module", module_name))
+        {
+            Journal::instance()->error("Module section is not found");
+            break;
+        }
+
+        QString q_module_cfg_name = "";
+        if (!cfg.getString(vehicle_node, "ModuleConfig", q_module_cfg_name))
+        {
+            Journal::instance()->error("Module config file name is not found");
+            break;
+        }
+
+        std::string module_cfg_name(q_module_cfg_name.toStdString());
+
+        // Calculate module library path
+        QString relModulePath = QString(fs.combinePath(module_name, module_name));
+
+        int n_vehicles = 0;
+
+        if (!cfg.getInt(vehicle_node, "Count", n_vehicles))
+        {
+            n_vehicles = 0;
+//            Journal::instance()->warning("Count of vehicles " + module_name + " is not found. Vehicle will't loaded");
+        }
+
+        // Payload coefficient of vehicles group
+        double payload_coeff = 0;
+        if (!cfg.getDouble(vehicle_node, "PayloadCoeff", payload_coeff))
+        {
+            payload_coeff = 0;
+        }
+
+        for (int i = 0; i < n_vehicles; ++i)
+        {
+/*
+            vsg::ref_ptr<vsg::Group> vehicle_model = loadVehicleModel(module_cfg_name);
+
+            if (!vehicle_model.valid())
+            {
+                std::cerr << "Vehicle model " << module_cfg_name << " is't loaded" << std::endl;
+                continue;
+            }
+
+            // Load cabine model
+            osg::ref_ptr<osg::Node> cabine;
+            loadCabine(vehicle_model.get(), module_cfg_name, cabine);
+
+            float length = getLength(module_cfg_name);
+
+            osg::Vec3 driver_pos = getDirverPosition(module_cfg_name);
+
+            vehicle_exterior_t vehicle_ext;
+            vehicle_ext.transform = new osg::MatrixTransform;
+            vehicle_ext.transform->addChild(vehicle_model.get());
+            vehicle_ext.length = length;
+            vehicle_ext.cabine = cabine;
+            vehicle_ext.driver_pos = driver_pos;
+
+            vehicle_ext.anims = new animations_t();
+            vehicle_ext.displays = new displays_t();
+
+            loadModelAnimations(module_cfg_name, vehicle_model.get(), *vehicle_ext.anims);
+            loadAnimations(module_cfg_name, vehicle_model.get(), *vehicle_ext.anims);
+            loadAnimations(module_cfg_name, cabine.get(), *vehicle_ext.anims);
+
+            anim_managers.push_back(new AnimationManager(vehicle_ext.anims));
+
+            loadDisplays(cfg, child, cabine.get(), *vehicle_ext.displays);
+
+            vehicles_ext.push_back(vehicle_ext);
+            trainExterior->addChild(vehicle_ext.transform.get());
+
+            */
+            Vehicle *vehicle = loadVehicle(fs.getModulesDir() +
+                                           fs.separator() +
+                                           relModulePath);
+
+            if (vehicle == Q_NULLPTR)
+            {
+//                    Journal::instance()->error("Vehicle " + module_name + " is't loaded");
+                break;
+            }
+
+//                Journal::instance()->info(QString("Created Vehicle object at address: 0x%1")
+//                                          .arg(reinterpret_cast<quint64>(vehicle), 0, 16));
+
+
+            QString relConfigPath = fs.combinePath(q_module_cfg_name, q_module_cfg_name);
+
+
+            QString config_dir(fs.combinePath(fs.getVehiclesDir(), q_module_cfg_name));
+            vehicle->setConfigDir(config_dir);
+
+            vehicle->init(fs.getVehiclesDir() + fs.separator() + relConfigPath + ".xml");
+
+            vehicle->setPayloadCoeff(payload_coeff);
+
+            vehicles.push_back(vehicle);
+
+        }
+        vehicle_node = cfg.getNextSection();
+
+    }
+
+    //animation_manager = new AnimationManager(&animations);
+    return vehicles;
 }
 
 //------------------------------------------------------------------------------
@@ -159,9 +287,8 @@ void Model::start()
         is_simulation_started = true;
         t = start_time;
 
-        connect(&simTimer, &ElapsedTimer::process, this, &Model::process, Qt::DirectConnection);
-        simTimer.setInterval(static_cast<quint64>(integration_time_interval));
-        simTimer.start();
+        timerid = this->startTimer(integration_time_interval);
+
     }
 }
 
@@ -244,7 +371,7 @@ void Model::loadInitData(init_data_t &init_data)
 {
     CfgReader cfg;
     FileSystem &fs = FileSystem::getInstance();
-    QString cfg_path = QString(fs.getConfigDir().c_str()) + fs.separator() + "init-data.xml";
+    QString cfg_path = fs.getConfigDir() + fs.separator() + "init-data.xml";
 
     if (cfg.load(cfg_path))
     {
@@ -292,11 +419,6 @@ void Model::loadInitData(init_data_t &init_data)
             init_data.debug_print = false;
         }
 
-        if (!cfg.getInt(secName, "KeysBufferSize", init_data.keys_buffer_size))
-        {
-            init_data.keys_buffer_size = 1024;
-        }
-
         Journal::instance()->info("Loaded settings from: " + cfg_path);
     }
     else
@@ -338,7 +460,7 @@ void Model::configSolver(solver_config_t &solver_config)
 {
     CfgReader cfg;
     FileSystem &fs = FileSystem::getInstance();
-    QString cfg_path = QString(fs.getConfigDir().c_str()) + fs.separator() + "solver.xml";
+    QString cfg_path = fs.getConfigDir() + fs.separator() + "solver.xml";
 
     if (cfg.load(cfg_path))
     {
@@ -392,7 +514,7 @@ void Model::initControlPanel(QString cfg_path)
 {
     CfgReader cfg;
     FileSystem &fs = FileSystem::getInstance();
-    QString full_path = QString(fs.getConfigDir().c_str()) + fs.separator() + cfg_path + ".xml";
+    QString full_path = fs.getConfigDir() + fs.separator() + cfg_path + ".xml";
 
     if (cfg.load(full_path))
     {
@@ -403,7 +525,7 @@ void Model::initControlPanel(QString cfg_path)
             return;
 
         control_panel = Q_NULLPTR;
-        QString module_path = QString(fs.getPluginsDir().c_str()) + fs.separator() + module_name;
+        QString module_path = fs.getPluginsDir() + fs.separator() + module_name;
         control_panel = loadInterfaceDevice(module_path);
 
         if (control_panel == Q_NULLPTR)
@@ -414,18 +536,15 @@ void Model::initControlPanel(QString cfg_path)
         if (!cfg.getString(secName, "ConfigDir", config_dir))
             return;
 
-        config_dir = QString(fs.toNativeSeparators(config_dir.toStdString()).c_str());
+        config_dir = fs.toNativeSeparators(config_dir);
 
-        if (!control_panel->init(QString(fs.getConfigDir().c_str()) + fs.separator() + config_dir))
+        if (!control_panel->init(fs.getConfigDir() + fs.separator() + config_dir))
             return;
 
         int request_interval = 0;
 
         if (!cfg.getInt(secName, "RequestInterval", request_interval))
             request_interval = 100;
-
-        controlTimer.setInterval(request_interval);
-        connect(&controlTimer, &QTimer::timeout, this, &Model::controlProcess);
 
         int v_idx = 0;
 
@@ -440,13 +559,12 @@ void Model::initControlPanel(QString cfg_path)
         connect(control_panel, &VirtualInterfaceDevice::sendControlSignals,
                 vehicle, &Vehicle::getControlSignals);
 
-        controlTimer.start();
     }
 }
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 void Model::initSimClient(QString cfg_path)
 {
     if (train->getTrainID().isEmpty())
@@ -490,51 +608,10 @@ void Model::initSimClient(QString cfg_path)
         Journal::instance()->error("There is no virtual railway configuration in file " + full_path);
     }
 }
-
+*/
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
-void Model::tcpFeedBack()
-{
-    /*std::vector<Vehicle *> *vehicles = train->getVehicles();
-
-    viewer_data.time = static_cast<float>(integration_time_interval) / 1000.0f;
-
-    size_t i = 0;
-    for (auto it = vehicles->begin(); it != vehicles->end(); ++it)
-    {
-        viewer_data.te[i].coord = static_cast<float>((*it)->getRailwayCoord());
-        viewer_data.te[i].velocity = static_cast<float>((*it)->getVelocity());
-        viewer_data.te[i].coord_end = viewer_data.te[i].coord + viewer_data.te[i].velocity * viewer_data.time;
-
-        viewer_data.te[i].angle = static_cast<float>((*it)->getWheelAngle(0));
-        viewer_data.te[i].omega = static_cast<float>((*it)->getWheelOmega(0));
-        viewer_data.te[i].angle_end = viewer_data.te[i].angle + viewer_data.te[i].omega * viewer_data.time;
-
-        (*it)->getDebugMsg().toWCharArray(viewer_data.te[i].DebugMsg);
-
-        memcpy(viewer_data.te[i].discreteSignal,
-               (*it)->getDiscreteSignals(),
-               sizeof (viewer_data.te[i].discreteSignal));
-
-        memcpy(viewer_data.te[i].analogSignal,
-               (*it)->getAnalogSignals(),
-               sizeof (viewer_data.te[i].analogSignal));
-        ++i;
-    }
-
-    QByteArray array(sizeof(server_data_t), Qt::Uninitialized);
-    memcpy(array.data(), &viewer_data, sizeof(server_data_t));
-    emit sendDataToServer(array);
-
-    viewer_data.count++;
-
-    emit sendDataToTrain(server->getReceivedData());*/
-}
-
-//------------------------------------------------------------------------------
-//
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 void Model::virtualRailwayFeedback()
 {
     if (sim_client == Q_NULLPTR)
@@ -567,60 +644,6 @@ void Model::virtualRailwayFeedback()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void Model::sharedMemoryFeedback()
-{
-    std::vector<Vehicle *> *vehicles = train->getVehicles();
-
-    viewer_data.time = static_cast<float>(t);
-
-    size_t i = 0;
-
-    for (auto it = vehicles->begin(); it != vehicles->end(); ++it)
-    {
-        viewer_data.te[i].coord = static_cast<float>((*it)->getRailwayCoord());
-        viewer_data.te[i].velocity = static_cast<float>((*it)->getVelocity());
-
-        viewer_data.te[i].angle = static_cast<float>((*it)->getWheelAngle(0));
-        viewer_data.te[i].omega = static_cast<float>((*it)->getWheelOmega(0));
-
-        /*VehicleController *vc = topology.getVehicleController(i);
-
-        vec3d att;
-        vec3d pos = vc->getPosition(att);
-
-        QString topDbg = QString("Тр: %1 Тр. коорд: %2 x: %3 y: %4 z: %5")
-                .arg(vc->getCurrentTraj()->getName(), 10)
-                .arg(vc->getTrajCoord(), 7, 'f', 2)
-                .arg(pos.x(), 8, 'f', 1)
-                .arg(pos.y(), 8, 'f', 1)
-                .arg(pos.z(), 8, 'f', 1);*/
-
-        //topDbg.toWCharArray(viewer_data.te[i].DebugMsg);
-        (*it)->getDebugMsg().toWCharArray(viewer_data.te[i].DebugMsg);
-
-        /*std::copy((*it)->getDiscreteSignals().begin(),
-                  (*it)->getDiscreteSignals().end(),
-                  viewer_data.te[i].discreteSignal.begin());*/
-
-        std::copy((*it)->getAnalogSignals().begin(),
-                  (*it)->getAnalogSignals().end(),
-                  viewer_data.te[i].analogSignal.begin());
-
-        ++i;
-    }
-
-    if (shared_memory.lock())
-    {
-        memcpy(shared_memory.data(), &viewer_data, sizeof (server_data_t));
-        shared_memory.unlock();
-    }
-
-    viewer_data.count++;    
-}
-
-//------------------------------------------------------------------------------
-//
-//------------------------------------------------------------------------------
 void Model::controlStep(double &control_time, const double control_delay)
 {
     if (control_time >= control_delay)
@@ -641,10 +664,10 @@ void Model::controlStep(double &control_time, const double control_delay)
 
     control_time += dt;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 void Model::topologyStep()
 {
     for (size_t i = 0; i < train->getVehicles()->size(); ++i)
@@ -653,11 +676,11 @@ void Model::topologyStep()
         vc[i].setRailwayCoord(train->getVehicles()->at(i)->getRailwayCoord());
     }
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void Model::process()
+void Model::timerEvent(QTimerEvent *event)
 {
     double tau = 0;
     double integration_time = static_cast<double>(integration_time_interval) / 1000.0;    
@@ -667,9 +690,6 @@ void Model::process()
             is_step_correct)
     {
         preStep(t);
-
-        // Feedback to viewer
-        sharedMemoryFeedback();
 
         controlStep(control_time, control_delay);        
 
@@ -687,6 +707,7 @@ void Model::process()
 
     // Debug print, is allowed
     if (is_debug_print)
-        debugPrint();    
+        debugPrint();
+
 }
 

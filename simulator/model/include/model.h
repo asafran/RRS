@@ -62,8 +62,7 @@ public:
     /// Model initialization
     bool init(const simulator_command_line_t &command_line);
 
-    /// Start simulation thread
-    void start();
+    QVarLengthArray<Vehicle *> load(const simulator_command_line_t &command_line);
 
     /// Check is simulation started
     bool isStarted() const;
@@ -72,11 +71,11 @@ signals:
 
     void logMessage(QString msg);
 
-    void sendDataToServer(QByteArray data);
+//    void sendDataToServer(QByteArray data);
 
-    void sendDataToTrain(QByteArray data);
+//    void sendDataToTrain(QByteArray data);
 
-    void getRecvData(sim_dispatcher_data_t &disp_data);
+//    void getRecvData(sim_dispatcher_data_t &disp_data);
 
 public slots:
 
@@ -87,7 +86,10 @@ public slots:
     void controlProcess();
 
     /// Обмен данными с ВЖД
-    void virtualRailwayFeedback();
+//    void virtualRailwayFeedback();
+
+    /// Start simulation thread
+    void start();
 
 private:
 
@@ -119,33 +121,14 @@ private:
     /// Profile
     Profile     *profile;
 
-    /// TCP-server
-    Server      *server;
-
     /// Виртуальное устройство для сопряжения с внешним пультом
     VirtualInterfaceDevice  *control_panel;
 
-    /// Клиент для связи с ВЖД
-    SimTcpClient *sim_client;
-
-    /// Simulation thread
-    QThread     model_thread;
-
-    KeysControl keys_control;
-
-    /// Server data to clinet transmission
-    server_data_t   viewer_data;
-
-    QSharedMemory   shared_memory;
-    QSharedMemory   keys_data;
-    QByteArray      data;
-
-    QTimer          controlTimer;
-    QTimer          networkTimer;
-
-    ElapsedTimer    simTimer;
-
     Topology topology;
+
+    int timerid;
+
+//    vsg::ref_ptr<vsg::Group> trainExterior;
 
     /// Actions, which prerare integration step
     void preStep(double t);
@@ -168,18 +151,10 @@ private:
 
     void initControlPanel(QString cfg_path);
 
-    void initSimClient(QString cfg_path);
-
-    /// TCP feedback
-    void tcpFeedBack();
-
-
-    /// Shered memory feedback
-    void sharedMemoryFeedback();
 
     void controlStep(double &control_time, const double control_delay);
 
-    void topologyStep();
+    void timerEvent(QTimerEvent *event) override;
 
 private slots:
 

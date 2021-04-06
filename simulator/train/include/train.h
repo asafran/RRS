@@ -26,7 +26,7 @@
 #include    "brakepipe.h"
 #include    "profile.h"
 #include    "sound-manager.h"
-#include    "time_controls_t.h"
+#include    "topology.h"
 
 #include    <QByteArray>
 
@@ -50,20 +50,21 @@ class TRAIN_EXPORT Train : public OdeSystem
 public:
 
     /// Constructor
-    explicit Train(Profile *profile, time_controls_t controls, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, QObject *parent = Q_NULLPTR);
 
-    explicit Train(Profile *profile, QVarLengthArray<Vehicle *>, time_controls_t controls,
-                   init_data_t init_data, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, init_data_t init_data, QObject *parent = Q_NULLPTR);
 
     /// Destructor
     virtual ~Train();
 
     /// Train initialization
-    bool init(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);
+    bool init(const QVarLengthArray<Vehicle *> vehicles_t);
 
     bool addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t);
 
     bool addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t);
+
+    void placeTrain(const topology_pos_t &tp);
 
     /// Calculation of right part motion ODE's
     void calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t);
@@ -113,7 +114,7 @@ signals:
 
 public slots:
 
-    void process();
+//    void process();
 
 private:    
 
@@ -152,16 +153,16 @@ private:
 
     /// Sound manager
     SoundManager *soundMan;
+    /// Pointer to topology database
+    Topology *topo;
 
-    QString full_config_path;
+    QString train_config_path;
 
     /// Имя сетевого клиента для ВЖД
 //    QString     client_name;
 
     /// Идентификатор поезда для ВЖД
 //    QString     train_id;
-
-    time_controls_t time_controls;
 
     /// All train's vehicles
     QVarLengthArray<Vehicle *> vehicles;

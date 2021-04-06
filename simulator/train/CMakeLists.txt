@@ -1,6 +1,6 @@
 file(GLOB SOURCES
-    include/*.h
-    src/*.cpp
+    include/train.h
+    src/train.cpp
 )
 
 add_library(train ${SOURCES})

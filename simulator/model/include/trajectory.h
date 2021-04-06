@@ -2,8 +2,10 @@
 #define     TRAJECTORY_H
 
 #include    <QObject>
+#include    <QSet>
 
 #include    "track.h"
+#include    "vehicle.h"
 
 class       Connector;
 
@@ -36,9 +38,11 @@ public:
 
     Connector *getBwdConnector() const { return bwdConnector; }
 
-    void setBusy(double is_busy) { this->is_busy = is_busy; }
+    void setBusy(Vehicle *vehicle) { vehicles_on_traj.insert(vehicle); }
 
-    bool isBusy() const { return is_busy; }
+    void removeBusy(Vehicle *vehicle) { vehicles_on_traj.remove(vehicle); }
+
+    bool isBusy() const { return !vehicles_on_traj.isEmpty(); }
 
 protected:
 
@@ -50,7 +54,7 @@ protected:
 
     Connector       *bwdConnector;
 
-    bool            is_busy;
+    QSet<Vehicle *> vehicles_on_traj;
 
     std::vector<track_t>    tracks;
 

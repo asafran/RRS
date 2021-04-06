@@ -8,9 +8,9 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-class VehicleController
+class VehicleController : public QObject
 {
-
+    Q_OBJECT
 public:
 
     VehicleController(QObject *parent = Q_NULLPTR);
