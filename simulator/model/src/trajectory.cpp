@@ -76,7 +76,17 @@ bool Trajectory::load(QString route_dir, QString traj_name)
 
     return true;
 }
+/*
+void Trajectory::setBusy(double is_busy, Vehicle *vehicle)
+{
+    this->is_busy = is_busy;
+    if(is_busy)
+        vehicles_on_traj.insert(vehicle);
+    else
+        vehicles_on_traj.remove(vehicle);
 
+}
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------

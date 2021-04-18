@@ -1,7 +1,7 @@
 #include "vehicle-data.h"
 
-VehicleData::VehicleData()
-    : R1(0.0)
+VehicleData::VehicleData(QObject *parent) : VehicleController(parent)
+    , R1(0.0)
     , R2(0.0)
     , railway_coord(0.0)
     , velocity(0.0)

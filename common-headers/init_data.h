@@ -36,6 +36,7 @@ struct init_data_t
     double  prof_step;
     QString train_config;
     QString route_dir;
+    QString coupling_module;
     int     integration_time_interval;
     int     control_time_interval;
     bool    debug_print;
@@ -52,6 +53,7 @@ struct init_data_t
         , prof_step(100.0)
         , train_config("")
         , route_dir("")
+        , coupling_module("default_coupling")
         , integration_time_interval(100)
         , control_time_interval(50)
         , debug_print(false)

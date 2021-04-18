@@ -38,11 +38,10 @@ Model::Model(QObject *parent) : QObject(parent)
   , is_debug_print(false)
   , control_time(0)
   , control_delay(0.05)
-  , train(nullptr)
   , profile(nullptr)
   , control_panel(nullptr)
   , topology(nullptr)
-  , timerid(0)
+  , timer_id(0)
 {
 
 }
@@ -98,14 +97,16 @@ bool Model::init(const simulator_command_line_t &command_line)
 
     // Train creation and initialization
     Journal::instance()->info("==== Train initialization ====");
-    train = new Train(profile, init_data, this);
+
+    Train *train = new Train(profile, &topology, init_data, this);
+    trains.push_back(train);
 
     Journal::instance()->info(QString("Created Train object at address: 0x%1")
                               .arg(reinterpret_cast<quint64>(train), 0, 16));
 
     connect(train, &Train::logMessage, this, &Model::logMessage);
 
-    if (!train->init(load(command_line)))
+    if (!train->init() || !train->addVehiclesBack(load(command_line)))
         return false;    
 
     initControlPanel("control-panel");
@@ -121,7 +122,7 @@ bool Model::init(const simulator_command_line_t &command_line)
     tp.traj_coord = 700.0;
     tp.dir = 1;
 
-    topology.init(tp, train->getVehicles());
+    train->placeTrain(tp);
 
     return true;
 }
@@ -397,11 +398,6 @@ void Model::loadInitData(init_data_t &init_data)
             init_data.prof_step = 100.0;
         }
 
-        if (!cfg.getString(secName, "TrainConfig", init_data.train_config))
-        {
-            init_data.train_config = "default-train";
-        }
-
         if (!cfg.getInt(secName, "IntegrationTimeInterval", init_data.integration_time_interval))
         {
             init_data.integration_time_interval = 100;
@@ -433,9 +429,6 @@ void Model::loadInitData(init_data_t &init_data)
 void Model::overrideByCommandLine(init_data_t &init_data,
                                   const simulator_command_line_t &command_line)
 {
-    if (command_line.train_config.is_present)
-        init_data.train_config = command_line.train_config.value;
-
     if (command_line.route_dir.is_present)
         init_data.route_dir = command_line.route_dir.value;
 

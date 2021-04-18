@@ -17,7 +17,7 @@ public:
 
     virtual ~VehicleController();
 
-    void setRailwayCoord(double x);
+//    void setRailwayCoord(double x);
 
     void setInitRailwayCoord(double x);
 

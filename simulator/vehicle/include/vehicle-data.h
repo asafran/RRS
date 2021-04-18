@@ -5,10 +5,11 @@
 #include    "vehicle-controller.h"
 #include    <vector>
 
-class VehicleData
+class VehicleData : public VehicleController
 {
+    Q_OBJECT
 public:
-    VehicleData();
+    VehicleData(QObject *parent = nullptr);
 
     double getRailwayCoord() const { return railway_coord; }
 

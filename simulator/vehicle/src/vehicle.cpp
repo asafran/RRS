@@ -28,8 +28,7 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Vehicle::Vehicle(QObject *parent) : VehicleController(parent)
-  , VehicleData()
+Vehicle::Vehicle(QObject *parent) : VehicleData(parent)
   , idx(0)
   , empty_mass(24000.0)
   , payload_mass(68000.0)
@@ -442,8 +441,8 @@ void Vehicle::topologyStep()
 
     if (current_traj != prev_traj)
     {
-        prev_traj->setBusy(false);
-        current_traj->setBusy(true);
+        prev_traj->removeBusy(this);
+        current_traj->setBusy(this);
     }
 }
 

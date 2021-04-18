@@ -50,15 +50,15 @@ class TRAIN_EXPORT Train : public OdeSystem
 public:
 
     /// Constructor
-    explicit Train(Profile *profile, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, Topology *topology, QObject *parent = Q_NULLPTR);
 
-    explicit Train(Profile *profile, init_data_t init_data, QObject *parent = Q_NULLPTR);
+    explicit Train(Profile *profile, Topology *topology, init_data_t init_data, QObject *parent = Q_NULLPTR);
 
     /// Destructor
     virtual ~Train();
 
     /// Train initialization
-    bool init(const QVarLengthArray<Vehicle *> vehicles_t);
+    bool init();
 
     bool addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t);
 
@@ -131,7 +131,7 @@ private:
 
     /// Profile manager
     Profile     *profile;
-
+/*
     double init_velocity;
 
     double init_coord;
@@ -144,6 +144,8 @@ private:
 
     /// Initial main reservoir pressure
     double      init_main_res_pressure;
+*/
+
 
     /// Motion ODE's solver
     Solver      *train_motion_solver;
@@ -155,15 +157,15 @@ private:
     SoundManager *soundMan;
     /// Pointer to topology database
     Topology *topo;
-
+/*
     QString train_config_path;
 
     /// Имя сетевого клиента для ВЖД
-//    QString     client_name;
+    QString     client_name;
 
     /// Идентификатор поезда для ВЖД
-//    QString     train_id;
-
+    QString     train_id;
+*/
     /// All train's vehicles
     QVarLengthArray<Vehicle *> vehicles;
 
@@ -173,15 +175,17 @@ private:
     /// Solver's configuration
     solver_config_t solver_config;
 
+    init_data_t init_data;
+
     /// Train's loading
 //    bool loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);
     /// Couplings loading
-    bool loadCouplings(QString cfg_path);
+    bool loadCouplings();
 
     void topologyStep();
 
     /// Set initial conditions
-    void setInitConditions(const init_data_t &init_data);
+//    void setInitConditions(const init_data_t &init_data);
 
     /// Initialization of vehicles brakes
     void initVehiclesBrakes();

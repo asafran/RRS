@@ -2,6 +2,7 @@
 #define     TOPOLOGY_H
 
 #include    <QObject>
+#include    <QSet>
 #include    <QMap>
 
 #include    "topology-types.h"
@@ -32,7 +33,7 @@ public:
     conn_list_t getSwithesList() const { return switches; }
 
     /// Общая инициализация
-    bool init(const topology_pos_t &tp, QVarLengthArray<Vehicle *> *vehicles);
+//    bool init(const topology_pos_t &tp, QVarLengthArray<Vehicle *> *vehicles);
 
     /// Вернуть контроллер конкретной ПЕ
 //    VehicleController *getVehicleController(size_t idx) const;
@@ -49,7 +50,7 @@ protected:
     conn_list_t     switches;
 
     /// Контейнер ПЕ
-    QSet<Vehicle *> vehicle_control;
+//    QSet<Vehicle *> vehicle_control;
 
     /// Получить список имен всех имеющихся траекторий
     QStringList getTrajNamesList(QString route_dir);

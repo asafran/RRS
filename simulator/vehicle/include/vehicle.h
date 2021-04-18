@@ -41,7 +41,7 @@
 //
 //------------------------------------------------------------------------------
 
-class VEHICLE_EXPORT Vehicle : public VehicleController, public VehicleData
+class VEHICLE_EXPORT Vehicle : public VehicleData
 {
     Q_OBJECT
 
@@ -131,6 +131,8 @@ public:
 
     ///
     void integrationPostStep(state_vector_t &Y, double t);
+
+    void topologyStep();
 
     ///
     double getBrakepipeBeginPressure() const;

@@ -14,9 +14,6 @@ Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(
   , ode_order(0)
   , dir(1)
   , profile(profile)
-  , charging_pressure(0.0)
-  , no_air(false)
-  , init_main_res_pressure(0.0)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
@@ -35,18 +32,14 @@ Train::Train(Profile *profile, Topology *topology, init_data_t init_data, QObjec
   , ode_order(0)
   , dir(init_data.direction)
   , profile(profile)
-  , init_velocity(init_data.init_velocity)
-  , init_coord(init_data.init_coord)
-  , charging_pressure(init_data.charging_pressure)
-  , no_air(init_data.no_air)
-  , init_main_res_pressure(init_data.init_main_res_pressure)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
   , topo(topology)
-  , train_config_path(init_data.train_config)
   , solver_config(init_data.solver_config)
+  , init_data(init_data)
 {
+
 }
 //------------------------------------------------------------------------------
 //
@@ -140,7 +133,7 @@ Train::~Train()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Train::init(const QVarLengthArray<Vehicle *> vehicles_t)
+bool Train::init()
 {  
     // Solver loading
     FileSystem &fs = FileSystem::getInstance();
@@ -159,11 +152,6 @@ bool Train::init(const QVarLengthArray<Vehicle *> vehicles_t)
 
     Journal::instance()->info("Loaded solver: " + solver_path);
 
-
-    Journal::instance()->info("Train config from file: " + fs.getTrainsDir() +
-                              fs.separator() +
-                              train_config_path + ".xml");
-
     try
     {
         soundMan = new SoundManager();
@@ -174,13 +162,6 @@ bool Train::init(const QVarLengthArray<Vehicle *> vehicles_t)
     } catch (const std::bad_alloc &)
     {
         Journal::instance()->error("Sound manager is;t created");
-    }
-
-    // Loading of train
-    if (!addVehiclesBack(vehicles_t))
-    {
-        Journal::instance()->error("Train is't loaded");
-        return false;
     }
 
 }
@@ -622,7 +603,7 @@ bool Train::loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicl
 */
 bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
 {
-    FileSystem &fs = FileSystem::getInstance();
+//
 
     size_t index = ode_order;
     bool was_empty = vehicles.isEmpty();
@@ -678,7 +659,7 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
         Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
 
         if(vehicles.isEmpty())
-            y[index + s] = init_velocity / Physics::kmh;
+            y[index + s] = init_data.init_velocity / Physics::kmh;
         else
             y[index + s] = getVelocity(vehicles.size() - 1) / Physics::kmh;
 
@@ -701,9 +682,7 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
                               .arg(reinterpret_cast<quint64>(dydt.data()), 0, 16));
 
     // Reload of couplings
-    if (!loadCouplings(fs.getTrainsDir() +
-                       fs.separator() +
-                       train_config_path + ".xml"))
+    if (!loadCouplings())
     {
         Journal::instance()->error("Coupling model is't loaded");
         return false;
@@ -711,7 +690,7 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
 
     if(was_empty)
     {
-        double x0 = init_coord * 1000.0 - dir * this->getFirstVehicle()->getLength() / 2.0;
+        double x0 = init_data.init_coord * 1000.0 - dir * this->getFirstVehicle()->getLength() / 2.0;
         y[0] = x0;
     }
 
@@ -743,11 +722,12 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
     brakepipe->setLength(trainLength);
     brakepipe->setNodesNum(vehicles.size());
 
-    if (!no_air)
-        brakepipe->setBeginPressure(charging_pressure * Physics::MPa + Physics::pA);
-
-    brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
-
+    if (was_empty)
+    {
+        brakepipe->setBeginPressure(init_data.charging_pressure * Physics::MPa + Physics::pA);
+        FileSystem &fs = FileSystem::getInstance();
+        brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
+    }
     initVehiclesBrakes(); 
 
     return true;
@@ -799,60 +779,46 @@ bool Train::addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Train::loadCouplings(QString cfg_path)
+bool Train::loadCouplings()
 {
-    CfgReader cfg;
     FileSystem &fs = FileSystem::getInstance();
 
-    if (cfg.load(cfg_path))
+    int num_couplings = static_cast<int>(vehicles.size() - 1);
+
+    if (num_couplings == 0)
+        return true;
+
+    for (int i = 0; i < num_couplings; i++)
     {
-        QString coupling_module = "";
-        if (!cfg.getString("Common", "CouplingModule", coupling_module))
+        Coupling *coupling = loadCoupling(fs.getModulesDir() +
+                                          fs.separator() +
+                                          init_data.coupling_module);
+
+        if (coupling == Q_NULLPTR)
         {
-            coupling_module = "default-coupling";
+            return false;
         }
 
-        int num_couplings = static_cast<int>(vehicles.size() - 1);
+        Journal::instance()->info(QString("Created Coupling object at address: 0x%1")
+                                  .arg(reinterpret_cast<quint64>(coupling), 0, 16));
 
-        if (num_couplings == 0)
-            return true;
+        Journal::instance()->info("Loaded coupling model from: " + init_data.coupling_module);
 
-        for (int i = 0; i < num_couplings; i++)
-        {
-            Coupling *coupling = loadCoupling(fs.getModulesDir() +
-                                              fs.separator() +
-                                              coupling_module);
+        coupling->loadConfiguration(fs.getCouplingsDir() +
+                                    fs.separator() +
+                                    init_data.coupling_module + ".xml");
 
-            if (coupling == Q_NULLPTR)
-            {
-                return false;
-            }
+        coupling->reset();
 
-            Journal::instance()->info(QString("Created Coupling object at address: 0x%1")
-                                      .arg(reinterpret_cast<quint64>(coupling), 0, 16));
-
-            Journal::instance()->info("Loaded coupling model from: " + coupling_module);
-
-            coupling->loadConfiguration(fs.getCouplingsDir() +
-                                        fs.separator() +
-                                        coupling_module + ".xml");
-
-            coupling->reset();
-
-            couplings.push_back(coupling);
-        }
-    }
-    else
-    {
-        Journal::instance()->error("File " + cfg_path + " is't found");
+        couplings.push_back(coupling);
     }
 
-    return couplings.size() != 0;
+    return !couplings.isEmpty();
 }
 
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 void Train::setInitConditions(const init_data_t &init_data)
 {
     for (size_t i = 0; i < vehicles.size(); i++)
@@ -890,7 +856,7 @@ void Train::setInitConditions(const init_data_t &init_data)
         Journal::instance()->info(QString("Vehicle[%2] coordinate: %1").arg(y[idxi]).arg(i, 3));
     }
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -901,7 +867,7 @@ void Train::initVehiclesBrakes()
     for (size_t i = 0; i < vehicles.size(); ++i)
     {
         double pTM = brakepipe->getPressure(i);
-        vehicles[i]->initBrakeDevices(charging_pressure, pTM, init_main_res_pressure);
+        vehicles[i]->initBrakeDevices(init_data.charging_pressure, pTM, init_data.init_main_res_pressure);
     }
 }
 

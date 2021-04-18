@@ -116,7 +116,7 @@ private:
     double      control_delay;
 
     /// Train model
-    Train       *train;    
+    QVarLengthArray<Train *>       train;
 
     /// Profile
     Profile     *profile;
