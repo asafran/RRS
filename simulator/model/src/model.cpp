@@ -40,7 +40,7 @@ Model::Model(QObject *parent) : QObject(parent)
   , control_delay(0.05)
   , profile(nullptr)
   , control_panel(nullptr)
-  , topology(nullptr)
+  , topology(this)
   , timer_id(0)
 {
 
@@ -57,10 +57,10 @@ Model::~Model()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Model::init(const simulator_command_line_t &command_line)
+bool Model::init(const simulator_init_t &command_line)
 {
     // Check is debug print allowed
-    is_debug_print = command_line.debug_print.is_present;
+    is_debug_print = command_line.debug_print.value();
 
     init_data_t init_data;
 
@@ -88,6 +88,12 @@ bool Model::init(const simulator_command_line_t &command_line)
     Journal::instance()->info(QString("State Profile object at address: 0x%1")
                               .arg(reinterpret_cast<quint64>(profile), 0, 16));
 
+    Journal::instance()->info("==== Topology data loading ====");
+    if(topology.load(init_data.route_dir))
+        Journal::instance()->info("Topology loaded successfully");
+    else
+        Journal::instance()->info("Topology is't loaded successfully");
+
     if (profile->isReady())
         Journal::instance()->info("Profile loaded successfully");
     else
@@ -98,6 +104,8 @@ bool Model::init(const simulator_command_line_t &command_line)
     // Train creation and initialization
     Journal::instance()->info("==== Train initialization ====");
 
+    QVarLengthArray<Vehicle *> vehilces = loadTrain(init_data, command_line);
+
     Train *train = new Train(profile, &topology, init_data, this);
     trains.push_back(train);
 
@@ -106,7 +114,7 @@ bool Model::init(const simulator_command_line_t &command_line)
 
     connect(train, &Train::logMessage, this, &Model::logMessage);
 
-    if (!train->init() || !train->addVehiclesBack(load(command_line)))
+    if (!train->init() || !train->addVehiclesBack(vehilces))
         return false;    
 
     initControlPanel("control-panel");
@@ -115,29 +123,30 @@ bool Model::init(const simulator_command_line_t &command_line)
 
     Journal::instance()->info("Train is initialized successfully");
 
-
-    topology.load(init_data.route_dir);
     topology_pos_t tp;
-    tp.traj_name = "s01-chp1";
-    tp.traj_coord = 700.0;
-    tp.dir = 1;
+
+    if(command_line.traj_name)
+        tp.traj_name = *command_line.traj_name;
+    if(command_line.traj_coord)
+        tp.traj_coord = *command_line.traj_coord;
+    if(command_line.direction)
+        tp.dir = *command_line.direction;
 
     train->placeTrain(tp);
 
     return true;
 }
 
-QVarLengthArray<Vehicle *> Model::load(const simulator_command_line_t &command_line)
+QVarLengthArray<Vehicle *> Model::loadTrain(init_data_t &init_data, const simulator_init_t &command_line)
 {
     // Loading train config XML-file
     FileSystem &fs = FileSystem::getInstance();
-    QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value + ".xml");
-    init_data_t init_data;
+    QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value() + ".xml");
     QVarLengthArray<Vehicle *> vehicles;
 
     CfgReader cfg;
     // Check train config name
-    if (!command_line.train_config.is_present)
+    if (!command_line.train_config.has_value())
     {
         Journal::instance()->error("Train config is't referenced");
         return vehicles;
@@ -288,7 +297,7 @@ void Model::start()
         is_simulation_started = true;
         t = start_time;
 
-        timerid = this->startTimer(integration_time_interval);
+        timer_id = this->startTimer(integration_time_interval);
 
     }
 }
@@ -316,7 +325,7 @@ void Model::controlProcess()
 {
     control_panel->process();
 }
-
+/*
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -343,7 +352,7 @@ void Model::postStep(double t)
 {
     train->postStep(t);
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -427,21 +436,21 @@ void Model::loadInitData(init_data_t &init_data)
 //
 //------------------------------------------------------------------------------
 void Model::overrideByCommandLine(init_data_t &init_data,
-                                  const simulator_command_line_t &command_line)
+                                  const simulator_init_t &command_line)
 {
-    if (command_line.route_dir.is_present)
-        init_data.route_dir = command_line.route_dir.value;
+    if (command_line.route_dir)
+        init_data.route_dir = *command_line.route_dir;
 
-    if (command_line.debug_print.is_present)
-        init_data.debug_print = command_line.debug_print.value;
+    if (command_line.debug_print)
+        init_data.debug_print = *command_line.debug_print;
 
-    if (command_line.init_coord.is_present)
+    if (command_line.init_coord)
     {
-        init_data.init_coord = command_line.init_coord.value;        
+        init_data.init_coord = *command_line.init_coord;
     }
 
-    if (command_line.direction.is_present)
-        init_data.direction = command_line.direction.value;
+    if (command_line.direction)
+        init_data.direction = *command_line.direction;
 
     Journal::instance()->info("Apply command line settinds");
 }
@@ -682,21 +691,22 @@ void Model::timerEvent(QTimerEvent *event)
     while ( (tau <= integration_time) &&
             is_step_correct)
     {
-        preStep(t);
+        for( auto train = trains.begin(); train != trains.end(); ++train )
+        {
+            (*train)->preStep(t);
 
-        controlStep(control_time, control_delay);        
+            is_step_correct = (*train)->step(t, dt);
 
-        is_step_correct = step(t, dt);
+            //topologyStep();
 
-        //topologyStep();
+            tau += dt;
+            t += dt;
 
-        tau += dt;
-        t += dt;
-
-        postStep(t);
+            (*train)->postStep(t);
+        }
     }
 
-    train->inputProcess();    
+//    train->inputProcess();
 
     // Debug print, is allowed
     if (is_debug_print)

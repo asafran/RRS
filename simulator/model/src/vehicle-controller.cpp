@@ -26,7 +26,7 @@ VehicleController::~VehicleController()
 
 //------------------------------------------------------------------------------
 //
-/*------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void VehicleController::setRailwayCoord(double x)
 {
     x_prev = x_cur;
@@ -84,11 +84,11 @@ void VehicleController::setRailwayCoord(double x)
 
     if (current_traj != prev_traj)
     {
-        prev_traj->setBusy(false);
-        current_traj->setBusy(true);
+        prev_traj->removeBusy(this);
+        current_traj->setBusy(this);
     }
 }
-*/
+
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------

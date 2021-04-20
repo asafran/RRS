@@ -34,7 +34,6 @@ struct init_data_t
     int     direction;
     QString profile_path;
     double  prof_step;
-    QString train_config;
     QString route_dir;
     QString coupling_module;
     int     integration_time_interval;
@@ -51,7 +50,6 @@ struct init_data_t
         , direction(1)
         , profile_path("")
         , prof_step(100.0)
-        , train_config("")
         , route_dir("")
         , coupling_module("default_coupling")
         , integration_time_interval(100)

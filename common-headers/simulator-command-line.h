@@ -2,24 +2,29 @@
 #define		SIMULATOR_COMMAND_LINE
 
 #include    "command-line.h"
+#include    <optional>
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-struct simulator_command_line_t
+struct simulator_init_t
 {
     /// Train configuration file name
-    option_t<QString>   train_config;
+    std::optional<QString>   train_config;
     /// Route directory
-    option_t<QString>   route_dir;
+    std::optional<QString>   route_dir;
     /// Clear simulator log file
-    option_t<bool>      clear_log;
+    std::optional<bool>      clear_log;
     /// Debug print in simulation loop
-    option_t<bool>      debug_print;
+    std::optional<bool>      debug_print;
     /// Initial railway coordinate
-    option_t<double>    init_coord;
+    std::optional<double>    init_coord;
     /// Initial direction
-    option_t<int>       direction;
+    std::optional<int>       direction;
+    /// Initial trajectory name
+    std::optional<QString>   traj_name;
+    /// Initial trajectory coordinate
+    std::optional<double>   traj_coord;
 };
 
 #endif // SIMULATOR_COMMAND_LINE

@@ -5,7 +5,7 @@
 #include    <QSet>
 
 #include    "track.h"
-#include    "vehicle.h"
+#include    "vehicle-controller.h"
 
 class       Connector;
 
@@ -38,9 +38,9 @@ public:
 
     Connector *getBwdConnector() const { return bwdConnector; }
 
-    void setBusy(Vehicle *vehicle) { vehicles_on_traj.insert(vehicle); }
+    void setBusy(VehicleController *vehicle) { vehicles_on_traj.insert(vehicle); }
 
-    void removeBusy(Vehicle *vehicle) { vehicles_on_traj.remove(vehicle); }
+    void removeBusy(VehicleController *vehicle) { vehicles_on_traj.remove(vehicle); }
 
     bool isBusy() const { return !vehicles_on_traj.isEmpty(); }
 
@@ -54,7 +54,7 @@ protected:
 
     Connector       *bwdConnector;
 
-    QSet<Vehicle *> vehicles_on_traj;
+    QSet<VehicleController *> vehicles_on_traj;
 
     std::vector<track_t>    tracks;
 

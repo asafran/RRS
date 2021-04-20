@@ -4,6 +4,7 @@
 #include    <QObject>
 
 #include    "topology-types.h"
+#include    "alsn-struct.h"
 
 //------------------------------------------------------------------------------
 //
@@ -17,7 +18,7 @@ public:
 
     virtual ~VehicleController();
 
-//    void setRailwayCoord(double x);
+    void setRailwayCoord(double x);
 
     void setInitRailwayCoord(double x);
 
@@ -33,7 +34,11 @@ public:
 
     double getTrajCoord() const { return traj_coord; }
 
-protected:
+public slots:
+
+    virtual void codeALSNreceived(alsn_info_t alsn_code);
+
+private:
 
     /// Предыдущее значение дуговой координаты ПЕ
     double  x_prev;

@@ -36,7 +36,6 @@ Train::Train(Profile *profile, Topology *topology, init_data_t init_data, QObjec
   , brakepipe(nullptr)
   , soundMan(nullptr)
   , topo(topology)
-  , solver_config(init_data.solver_config)
   , init_data(init_data)
 {
 
@@ -134,7 +133,8 @@ Train::~Train()
 //
 //------------------------------------------------------------------------------
 bool Train::init()
-{  
+{
+    solver_config = init_data.solver_config;
     // Solver loading
     FileSystem &fs = FileSystem::getInstance();
     QString solver_path = fs.getLibraryDir() + fs.separator() + solver_config.method;
@@ -601,7 +601,8 @@ bool Train::loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicl
     return !vehicles.isEmpty();
 }
 */
-bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
+
+bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
 {
 //
 
@@ -732,48 +733,6 @@ bool Train::addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t)
 
     return true;
 
-}
-
-bool Train::addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t)
-{
-/*
-    if(vehicles.isEmpty())
-        return false;
-
-    size_t index = ode_order;
-    for (auto it = vehicles_t.begin(); it != vehicles_t.end(); ++it)
-    {
-        (*it)->setDirection(dir);
-
-        trainMass += (*it)->getMass();
-        trainLength += (*it)->getLength();
-
-        size_t s = (*it)->getDegressOfFreedom();
-
-        ode_order += 2 * s;
-
-        (*it)->setIndex(index);
-        index = ode_order;
-
-        // Loading sounds
-        soundMan->loadSounds((*it)->getSoundsDir());
-
-        connect(*it, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
-        connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
-
-        if (vehicles.size() !=0)
-        {
-            Vehicle *prev =  *(vehicles.end() - 1);
-            prev->setNextVehicle(*it);
-            (*it)->setPrevVehicle(prev);
-        }
-
-        this->vehicles.push_back(*it);
-    }
-*/
 }
 
 //------------------------------------------------------------------------------

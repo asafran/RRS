@@ -1,5 +1,6 @@
 file(GLOB SOURCES
     include/*.h
+    ../../vmmlib/include/*.hpp
     src/*.cpp
 )
 
@@ -28,7 +29,7 @@ target_link_libraries(model sound-manager)
 
 target_include_directories(model PRIVATE ../../common-headers)
 
-target_include_directories(model PRIVATE ../../vmmlib)
+target_include_directories(model PRIVATE ../../vmmlib/include)
 
 target_include_directories(model PRIVATE ${OPENAL_INCLUDE_DIR})
 

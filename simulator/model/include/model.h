@@ -27,17 +27,17 @@
 #include    "train.h"
 #include    "elapsed-timer.h"
 
-#include    "server.h"
+//#include    "server.h"
 
 #include    "profile.h"
 
-#include    "keys-control.h"
+//#include    "keys-control.h"
 
 #include    "virtual-interface-device.h"
 
-#include    "sim-client.h"
+//#include    "sim-client.h"
 
-#include    "topology.h"
+//#include    "topology.h"
 
 #if defined(MODEL_LIB)
     #define MODEL_EXPORT Q_DECL_EXPORT
@@ -60,9 +60,9 @@ public:
     virtual ~Model();
 
     /// Model initialization
-    bool init(const simulator_command_line_t &command_line);
+    bool init(const simulator_init_t &command_line);
 
-    QVarLengthArray<Vehicle *> load(const simulator_command_line_t &command_line);
+    QVarLengthArray<Vehicle *> loadTrain(init_data_t &init_data, const simulator_init_t &command_line);
 
     /// Check is simulation started
     bool isStarted() const;
@@ -116,7 +116,7 @@ private:
     double      control_delay;
 
     /// Train model
-    QVarLengthArray<Train *>       train;
+    QVarLengthArray<Train *>       trains;
 
     /// Profile
     Profile     *profile;
@@ -126,17 +126,17 @@ private:
 
     Topology topology;
 
-    int timerid;
+    int timer_id;
 
 //    vsg::ref_ptr<vsg::Group> trainExterior;
-
+/*
     /// Actions, which prerare integration step
     void preStep(double t);
     /// Simulation step
     bool step(double t, double &dt);
     /// Actions after integration step
     void postStep(double t);
-
+*/
     /// Debug print to stdout
     void debugPrint();
 
@@ -144,7 +144,7 @@ private:
     void loadInitData(init_data_t &init_data);
 
     /// Override of initial data by command line
-    void overrideByCommandLine(init_data_t &init_data, const simulator_command_line_t &command_line);
+    void overrideByCommandLine(init_data_t &init_data, const simulator_init_t &command_line);
 
     /// Solver configuration loading
     void configSolver(solver_config_t &solver_config);

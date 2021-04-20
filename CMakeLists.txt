@@ -15,7 +15,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # set the use of C++17 globally
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -56,6 +56,7 @@ add_subdirectory(asound)
 add_subdirectory(osgdb_dmd)
 add_subdirectory(simulator)
 add_subdirectory(viewer)
+#add_subdirectory(viewer2/viewer2)
 
 add_subdirectory(addons/chs2t/chs2t)
 add_subdirectory(addons/passcar/passcar)

@@ -41,7 +41,7 @@
 //
 //------------------------------------------------------------------------------
 
-class VEHICLE_EXPORT Vehicle : public VehicleData
+class VEHICLE_EXPORT Vehicle : public VehicleController
 {
     Q_OBJECT
 
@@ -85,6 +85,9 @@ public:
     void setRailwayCoord(double value);
 
     void setVelocity(double value);
+
+    double getWheelAngle(size_t i) const;
+    double getWheelOmega(size_t i) const;
 
     void setWheelAngle(size_t i, double value);
     void setWheelOmega(size_t i, double value);
@@ -132,8 +135,6 @@ public:
     ///
     void integrationPostStep(state_vector_t &Y, double t);
 
-    void topologyStep();
-
     ///
     double getBrakepipeBeginPressure() const;
 
@@ -161,7 +162,7 @@ public:
 
     double getEPTControl(size_t i);
 
-    void setASLN(alsn_info_t alsn_info);
+//    void setASLN(alsn_info_t alsn_info);
 
     float getInput(size_t index) const;
 
@@ -169,7 +170,7 @@ public:
 
 public slots:
     
-//    void receiveData(QByteArray data);
+    void codeALSNreceived(alsn_info_t track_code);
 
     void getControlSignals(control_signals_t control_signals);
 
@@ -190,6 +191,8 @@ signals:
     void sendFeedBackSignals(feedback_signals_t feedback_signals);
 
 protected:
+
+    vehicle_data_t vehicle_data;
 
     /// Vehicle ODE system index
     size_t     idx;

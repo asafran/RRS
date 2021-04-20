@@ -60,9 +60,7 @@ public:
     /// Train initialization
     bool init();
 
-    bool addVehiclesBack(const QVarLengthArray<Vehicle *> vehicles_t);
-
-    bool addVehiclesFront(const QVarLengthArray<Vehicle *> vehicles_t);
+    bool addVehicles(const QVarLengthArray<Vehicle *> vehicles_t);
 
     void placeTrain(const topology_pos_t &tp);
 

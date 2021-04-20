@@ -254,7 +254,7 @@ bool RouteViewer::init(int argc, char *argv[])
     auto skyboxFilename = arguments.value(vsg::Path(), "--skybox");
 */
 
-    simulator_command_line_t command_line;
+    simulator_init_t command_line;
 
     if (arguments.read("--train-config", command_line.train_config.value)) command_line.train_config.is_present = true;
     if (arguments.read("--clear-log")) command_line.clear_log.is_present = command_line.clear_log.value = true;
