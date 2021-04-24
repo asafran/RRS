@@ -47,12 +47,12 @@ public:
     bool load(QString path);
 
     /// Find first section by name
-	QDomNode getFirstSection(QString section);
+    QDomElement getFirstSection(QString section);
     /// Find next section
-	QDomNode getNextSection();
+    QDomElement getNextSection();
 
     /// Get field in section
-	QDomNode getField(QDomNode secNode, QString field);
+    QDomElement getField(QDomNode secNode, QString field);
 
     /// Get string field
     bool getString(QString section, QString field, QString &value);

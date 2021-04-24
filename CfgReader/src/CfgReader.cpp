@@ -79,7 +79,7 @@ bool CfgReader::getString(QString section,
 		return false;
     }
 
-	QDomNode fieldNode = getField(secNode, field);
+    QDomElement fieldElement = getField(secNode, field);
 
 	if (fieldNode.isNull())
     {
@@ -151,8 +151,9 @@ bool CfgReader::getInt(QString section, QString field, int &value)
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-QDomNode CfgReader::getFirstSection(QString section)
+QDomElement CfgReader::getFirstSection(QString section)
 {
+    /*
 	QDomNode node = firstElement.firstChild();
 
 	while ( (node.nodeName() != section) && (!node.isNull()) )
@@ -161,15 +162,17 @@ QDomNode CfgReader::getFirstSection(QString section)
 	}
 
 	curNode = node;
+    */
 
-	return node;
+    return firstElement.firstChildElement(section);
 }
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-QDomNode CfgReader::getNextSection()
+QDomElement CfgReader::getNextSection()
 {
+    /*
 	QString section = curNode.nodeName();
 	QDomNode node = curNode.nextSibling();
 
@@ -178,24 +181,26 @@ QDomNode CfgReader::getNextSection()
 		node = node.nextSibling();
 	}
 
-	curNode = node;
+    curNode = node
+    */
 
-	return node;
+    return curNode.nextSiblingElement(curNode.nodeName());
 }
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-QDomNode CfgReader::getField(QDomNode secNode, QString field)
+QDomElement CfgReader::getField(QDomNode secNode, QString field)
 {
+    /*
 	QDomNode node = secNode.firstChild();
 
 	while ((node.nodeName() != field) && (!node.isNull()))
 	{
 		node = node.nextSibling();
 	}
-
-	return node;
+    */
+    return secNode.firstChildElement(field);
 }
 
 //-----------------------------------------------------------------------------
@@ -203,14 +208,15 @@ QDomNode CfgReader::getField(QDomNode secNode, QString field)
 //-----------------------------------------------------------------------------
 bool CfgReader::getString(QDomNode secNode, QString field, QString &value)
 {
-	QDomNode node = getField(secNode, field);
+//	QDomNode node = getField(secNode, field);
+    QDomElement element = secNode.firstChildElement(field);
 
-	if (node.isNull())
+    if (element.isNull())
     {
 		return false;
 	}
 
-	value = node.toElement().text();
+    value = element.text();
 
 	return true;
 }
