@@ -1,8 +1,8 @@
 #ifndef     TRACK_H
 #define     TRACK_H
 
-#include    "vector.hpp"
-#include    "math.hpp"
+#include    "../../../vmmlib/include/vector.hpp"
+#include    "../../../vmmlib/include/math.hpp"
 
 enum
 {

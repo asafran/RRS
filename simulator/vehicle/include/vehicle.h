@@ -100,6 +100,16 @@ public:
     /// Get vehicle index
     size_t getIndex() const;
 
+    double getRailwayCoord() const { return vehicle_data.railway_coord; }
+    double getVelocity()  const { return vehicle_data.velocity; }
+
+    double getFwdCouplingForce() const { return vehicle_data.R1; }
+    double getBwdCouplingForce() const { return vehicle_data.R2; }
+
+    state_vector_t getCommonForces() const { return vehicle_data.Q_a; }
+    state_vector_t getReactiveForces() const { return vehicle_data.Q_r; }
+    state_vector_t getAcceleration() const { return vehicle_data.a; }
+
     /// Get vehicle mass
     double getMass() const;
 
@@ -145,6 +155,8 @@ public:
     void setBrakepipePressure(double pTM);
 
     QString getDebugMsg() const;
+
+    vehicle_data_t getViewerData() const { return vehicle_data; };
 
     /// vehicle get sounds directory
     QString getSoundsDir() const;

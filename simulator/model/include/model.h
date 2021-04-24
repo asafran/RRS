@@ -25,7 +25,7 @@
 #include    "simulator-command-line.h"
 #include    "filesystem.h"
 #include    "train.h"
-#include    "elapsed-timer.h"
+#include    "global-const.h"
 
 //#include    "server.h"
 
@@ -62,7 +62,7 @@ public:
     /// Model initialization
     bool init(const simulator_init_t &command_line);
 
-    QVarLengthArray<Vehicle *> loadTrain(init_data_t &init_data, const simulator_init_t &command_line);
+    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> loadTrain(init_data_t &init_data, const simulator_init_t &command_line);
 
     /// Check is simulation started
     bool isStarted() const;
@@ -71,7 +71,7 @@ signals:
 
     void logMessage(QString msg);
 
-//    void sendDataToServer(QByteArray data);
+    void sendDataToViewer(QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> data);
 
 //    void sendDataToTrain(QByteArray data);
 

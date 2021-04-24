@@ -5,6 +5,7 @@
 #include    "Journal.h"
 #include    "connector.h"
 
+
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -356,9 +357,19 @@ void Train::inputProcess()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void Train::postStep(double t)
+QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> Train::postStep(double t)
 {
     (void) t;
+    auto end = vehicles.end();
+    auto begin = vehicles.begin();
+
+    QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> data;
+
+    for (auto i = begin; i != end; ++i)
+    {
+         data.append((*i)->getViewerData());
+    }
+    return data;
 }
 
 //------------------------------------------------------------------------------
@@ -443,7 +454,7 @@ int Train::getDirection() const
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-QVarLengthArray<Vehicle *> *Train::getVehicles()
+QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> *Train::getVehicles()
 {
     return &vehicles;
 }
@@ -602,7 +613,7 @@ bool Train::loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicl
 }
 */
 
-bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
+bool Train::addVehicles(const QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles_t)
 {
 //
 
@@ -611,47 +622,48 @@ bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
 
     Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(index));
 
-    for (auto it = vehicles_t.begin(); it != vehicles_t.end(); ++it)
+    for (auto vehicle = vehicles_t.begin(); vehicle != vehicles_t.end(); ++vehicle)
     {
-        connect(*it, &Vehicle::logMessage, this, &Train::logMessage);
+        (*vehicle)->setParent(this);
+        connect(*vehicle, &Vehicle::logMessage, this, &Train::logMessage);
 
-        (*it)->setDirection(dir);
+        (*vehicle)->setDirection(dir);
 
-        trainMass += (*it)->getMass();
-        trainLength += (*it)->getLength();
+        trainMass += (*vehicle)->getMass();
+        trainLength += (*vehicle)->getLength();
 
         Journal::instance()->info(QString("Update train mass and lenght: %1, %2").arg(trainMass).arg(trainLength));
 
-        size_t s = (*it)->getDegressOfFreedom();
+        size_t s = (*vehicle)->getDegressOfFreedom();
 
         ode_order += 2 * s;
 
         Journal::instance()->info(QString("Set index %1").arg(index));
 
-        (*it)->setIndex(index);
+        (*vehicle)->setIndex(index);
         index = ode_order;
 
         Journal::instance()->info(QString("Update index %1, connecting sound manager").arg(index));
 
         // Loading sounds
-        soundMan->loadSounds((*it)->getSoundsDir());
+        soundMan->loadSounds((*vehicle)->getSoundsDir());
 
-        connect(*it, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
-        connect(*it, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
-        connect(*it, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
+        connect(*vehicle, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
+        connect(*vehicle, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
+        connect(*vehicle, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
+        connect(*vehicle, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
+        connect(*vehicle, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
 
         Journal::instance()->info(QString("Set prev/next pointers"));
 
-        if (vehicles.size() !=0)
+        if (!vehicles.isEmpty())
         {
             Vehicle *prev =  *(vehicles.end() - 1);
-            prev->setNextVehicle(*it);
-            (*it)->setPrevVehicle(prev);
+            prev->setNextVehicle(*vehicle);
+            (*vehicle)->setPrevVehicle(prev);
             Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
                                       .arg(reinterpret_cast<quint64>(prev), 0, 16)
-                                      .arg(reinterpret_cast<quint64>(*it), 0, 16));
+                                      .arg(reinterpret_cast<quint64>(*vehicle), 0, 16));
         }
 
         y.resize(ode_order);
@@ -664,7 +676,7 @@ bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
         else
             y[index + s] = getVelocity(vehicles.size() - 1) / Physics::kmh;
 
-        double wheel_radius = (*it)->getWheelDiameter() / 2.0;
+        double wheel_radius = (*vehicle)->getWheelDiameter() / 2.0;
 
         for (size_t j = 1; j < static_cast<size_t>(s); j++)
         {
@@ -672,7 +684,7 @@ bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
         }
 
 
-        this->vehicles.push_back(*it);
+        this->vehicles.push_back(*vehicle);
 
     }
 
@@ -723,12 +735,12 @@ bool Train::addVehicles(const QVarLengthArray<Vehicle *> vehicles_t)
     brakepipe->setLength(trainLength);
     brakepipe->setNodesNum(vehicles.size());
 
-    if (was_empty)
-    {
+//    if (was_empty)
+//    {
         brakepipe->setBeginPressure(init_data.charging_pressure * Physics::MPa + Physics::pA);
         FileSystem &fs = FileSystem::getInstance();
         brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
-    }
+//    }
     initVehiclesBrakes(); 
 
     return true;

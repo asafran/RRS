@@ -39,9 +39,9 @@ struct init_data_t
     int     integration_time_interval;
     int     control_time_interval;
     bool    debug_print;
-    double charging_pressure = 0.5;
-    double init_main_res_pressure = 0.9;
-    bool no_air = false;
+    double charging_pressure;
+    double init_main_res_pressure;
+    bool no_air;
     solver_config_t solver_config;
 
     init_data_t()
@@ -55,6 +55,9 @@ struct init_data_t
         , integration_time_interval(100)
         , control_time_interval(50)
         , debug_print(false)
+        , charging_pressure(0.5)
+        , init_main_res_pressure(0.9)
+        , no_air(false)
     {
 
     }

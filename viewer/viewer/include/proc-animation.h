@@ -33,7 +33,7 @@ public:
 
     }
 
-    ProcAnimation(osg::MatrixTransform *transform);
+    ProcAnimation(vsg::MatrixTransform *transform);
 
     virtual ~ProcAnimation();
 

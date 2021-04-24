@@ -27,6 +27,7 @@
 #include    "profile.h"
 #include    "sound-manager.h"
 #include    "topology.h"
+#include    "global-const.h"
 
 #include    <QByteArray>
 
@@ -60,7 +61,7 @@ public:
     /// Train initialization
     bool init();
 
-    bool addVehicles(const QVarLengthArray<Vehicle *> vehicles_t);
+    bool addVehicles(const QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles_t);
 
     void placeTrain(const topology_pos_t &tp);
 
@@ -79,7 +80,7 @@ public:
     void inputProcess();
 
     /// Action after integration step
-    void postStep(double t);
+    QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> postStep(double t);
 
     /// Get first vehicle
     Vehicle *getFirstVehicle() const;
@@ -102,13 +103,12 @@ public:
 
     int getDirection() const;
 
-    QVarLengthArray<Vehicle *> *getVehicles();
+    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> *getVehicles();
 
 signals:
 
     void logMessage(QString msg);
 //    void sendDataToVehicle(QByteArray data);
-    void posDataReady(QVarLengthArray<VehicleData> send_datacopy);
 
 public slots:
 
@@ -165,10 +165,10 @@ private:
     QString     train_id;
 */
     /// All train's vehicles
-    QVarLengthArray<Vehicle *> vehicles;
+    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles;
 
     /// All train's couplings
-    QVarLengthArray<Coupling *> couplings;
+    QVarLengthArray<Coupling *, MAX_NUM_VEHICLES> couplings;
 
     /// Solver's configuration
     solver_config_t solver_config;

@@ -15,7 +15,7 @@
 
 #include    "model.h"
 
-#include    <QTime>
+#include    <QTimerEvent>
 
 #include    "CfgReader.h"
 #include    "Journal.h"
@@ -104,7 +104,7 @@ bool Model::init(const simulator_init_t &command_line)
     // Train creation and initialization
     Journal::instance()->info("==== Train initialization ====");
 
-    QVarLengthArray<Vehicle *> vehilces = loadTrain(init_data, command_line);
+    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehilces = loadTrain(init_data, command_line);
 
     Train *train = new Train(profile, &topology, init_data, this);
     trains.push_back(train);
@@ -114,7 +114,7 @@ bool Model::init(const simulator_init_t &command_line)
 
     connect(train, &Train::logMessage, this, &Model::logMessage);
 
-    if (!train->init() || !train->addVehiclesBack(vehilces))
+    if (!train->init() || !train->addVehicles(vehilces))
         return false;    
 
     initControlPanel("control-panel");
@@ -137,12 +137,12 @@ bool Model::init(const simulator_init_t &command_line)
     return true;
 }
 
-QVarLengthArray<Vehicle *> Model::loadTrain(init_data_t &init_data, const simulator_init_t &command_line)
+QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> Model::loadTrain(init_data_t &init_data, const simulator_init_t &command_line)
 {
     // Loading train config XML-file
     FileSystem &fs = FileSystem::getInstance();
     QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value() + ".xml");
-    QVarLengthArray<Vehicle *> vehicles;
+    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles;
 
     CfgReader cfg;
     // Check train config name
@@ -358,6 +358,7 @@ void Model::postStep(double t)
 //------------------------------------------------------------------------------
 void Model::debugPrint()
 {
+/*
     QString debug_info = QString("t = %1 realtime_delay = %2 time_step = %3 x = %10 v[first] = %4 v[last] = %5 trac = %6 pos = %7 eq_press = %8 bp_press = %9 pos = %11\n")
             .arg(t)
             .arg(realtime_delay)
@@ -372,8 +373,8 @@ void Model::debugPrint()
             .arg(static_cast<double>(train->getFirstVehicle()->getAnalogSignal(20)));
 
     fputs(qPrintable(debug_info), stdout);
+*/
 }
-
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -553,7 +554,7 @@ void Model::initControlPanel(QString cfg_path)
         if (!cfg.getInt(secName, "Vehicle", v_idx))
             v_idx = 0;
 
-        Vehicle *vehicle = train->getVehicles()->at(static_cast<size_t>(v_idx));
+        Vehicle *vehicle = trains[0]->getVehicles()->at(static_cast<size_t>(v_idx));
 
         connect(vehicle, &Vehicle::sendFeedBackSignals,
                 control_panel, &VirtualInterfaceDevice::receiveFeedback);
@@ -702,7 +703,7 @@ void Model::timerEvent(QTimerEvent *event)
             tau += dt;
             t += dt;
 
-            (*train)->postStep(t);
+            emit sendDataToViewer((*train)->postStep(t));
         }
     }
 
@@ -712,5 +713,6 @@ void Model::timerEvent(QTimerEvent *event)
     if (is_debug_print)
         debugPrint();
 
+    event->accept();
 }
 
