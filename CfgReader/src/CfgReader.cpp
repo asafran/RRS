@@ -72,7 +72,7 @@ bool CfgReader::getString(QString section,
                           QString field,
                           QString &value)
 {
-	QDomNode secNode = getFirstSection(section);
+    QDomNode secNode = getFirstSection(section);
 
 	if (secNode.isNull())
     {
@@ -81,12 +81,12 @@ bool CfgReader::getString(QString section,
 
     QDomElement fieldElement = getField(secNode, field);
 
-	if (fieldNode.isNull())
+    if (fieldElement.isNull())
     {
 		return false;
 	}
 
-	value = fieldNode.toElement().text();
+    value = fieldElement.text();
 
 	return true;
 }
