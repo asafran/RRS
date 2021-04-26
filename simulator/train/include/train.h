@@ -41,6 +41,9 @@
  * \class
  * \brief Common train model
  */
+
+
+
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -61,7 +64,15 @@ public:
     /// Train initialization
     bool init();
 
-    bool addVehicles(const QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles_t);
+    bool addVehiclesBack(const QVector<Vehicle *> vehicles_add);
+
+    bool addVehiclesFront(const QVector<Vehicle *> vehicles_add);
+
+    void updatePos();
+
+    void updatePos(double coord);
+
+//    bool updatePos(double speed, double coord);
 
     void placeTrain(const topology_pos_t &tp);
 
@@ -73,6 +84,8 @@ public:
 
     /// Integration step
     bool step(double t, double &dt);
+
+    void connectToTrain(QVector<Vehicle *>::const_iterator vehicle);
 
     /// Integration step for vehicles ODE's
     void vehiclesStep(double t, double dt);
@@ -103,7 +116,7 @@ public:
 
     int getDirection() const;
 
-    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> *getVehicles();
+    QVector<Vehicle *> getVehicles();
 
 signals:
 
@@ -165,15 +178,15 @@ private:
     QString     train_id;
 */
     /// All train's vehicles
-    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles;
+    QVector<Vehicle *> vehicles;
 
     /// All train's couplings
-    QVarLengthArray<Coupling *, MAX_NUM_VEHICLES> couplings;
+    QVector<Coupling *> couplings;
 
     /// Solver's configuration
     solver_config_t solver_config;
 
-    init_data_t init_data;
+    const init_data_t init_data;
 
     /// Train's loading
 //    bool loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);

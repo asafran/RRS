@@ -29,8 +29,6 @@
 //------------------------------------------------------------------------------
 struct init_data_t
 {
-    double  init_coord;
-    double  init_velocity;
     int     direction;
     QString profile_path;
     double  prof_step;
