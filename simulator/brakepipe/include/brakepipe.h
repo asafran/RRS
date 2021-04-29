@@ -54,6 +54,8 @@ public:
     /// Set pressure in begin node of pipe
     void setBeginPressure(double p0);
 
+    void setPressure(double p, size_t index);
+
     /// Set pressure rate in node
     void setAuxRate(size_t i, double auxRate);
 

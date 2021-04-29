@@ -29,7 +29,7 @@
 #include    "topology.h"
 #include    "global-const.h"
 
-#include    <QByteArray>
+#include    <QVector>
 
 #if defined(TRAIN_LIB)
     #define TRAIN_EXPORT    Q_DECL_EXPORT
@@ -72,7 +72,11 @@ public:
 
     void updatePos(double coord);
 
+    void setSpeed(double V, const double coeff);
+
 //    bool updatePos(double speed, double coord);
+
+    void updateBrakepipe();
 
     void placeTrain(const topology_pos_t &tp);
 
@@ -199,7 +203,7 @@ private:
 //    void setInitConditions(const init_data_t &init_data);
 
     /// Initialization of vehicles brakes
-    void initVehiclesBrakes();
+    void initVehiclesBrakes(double charging_pressure, double main_res_pressure);
 
 //    void timerEvent(QTimerEvent *event) override;
 };

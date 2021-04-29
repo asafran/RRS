@@ -115,7 +115,7 @@ double Device::getY(size_t i) const
 void Device::read_config(const QString &path)
 {
     CfgReader cfg;
-    QString cfg_path = QString(cfg_dir.c_str()) + QDir::separator() + path + ".xml";
+    QString cfg_path = cfg_dir + QDir::separator() + path + ".xml";
 
     if (cfg.load(cfg_path))
     {

@@ -41,7 +41,7 @@
 //
 //------------------------------------------------------------------------------
 
-class VEHICLE_EXPORT Vehicle : public VehicleController
+class VEHICLE_EXPORT Vehicle : public VehicleController, public VehicleData
 {
     Q_OBJECT
 
@@ -99,7 +99,7 @@ public:
 
     /// Get vehicle index
     size_t getIndex() const;
-
+/*
     double getRailwayCoord() const { return vehicle_data.railway_coord; }
     double getVelocity()  const { return vehicle_data.velocity; }
 
@@ -109,7 +109,7 @@ public:
     state_vector_t getCommonForces() const { return vehicle_data.Q_a; }
     state_vector_t getReactiveForces() const { return vehicle_data.Q_r; }
     state_vector_t getAcceleration() const { return vehicle_data.a; }
-
+*/
     /// Get vehicle mass
     double getMass() const;
 
@@ -130,7 +130,7 @@ public:
 //    std::array<float, MAX_ANALOG_SIGNALS> getAnalogSignals();
 
     /// Common acceleration calculation
-    virtual state_vector_t getAcceleration(state_vector_t &Y, double t);
+    virtual transfer_vector_t getAcceleration(state_vector_t &Y, double t);
 
     ///
     void integrationPreStep(state_vector_t &Y, double t);
@@ -156,7 +156,7 @@ public:
 
     QString getDebugMsg() const;
 
-    vehicle_data_t getViewerData() const { return vehicle_data; };
+//    vehicle_data_t getViewerData() const { return vehicle_data; };
 
     /// vehicle get sounds directory
     QString getSoundsDir() const;
@@ -204,7 +204,7 @@ signals:
 
 protected:
 
-    vehicle_data_t vehicle_data;
+//    vehicle_data_t vehicle_data;
 
     /// Vehicle ODE system index
     size_t     idx;

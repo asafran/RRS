@@ -19,7 +19,6 @@ Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(
   , brakepipe(nullptr)
   , soundMan(nullptr)
   , topo(topology)
-
 {
 
 }
@@ -165,6 +164,12 @@ bool Train::init()
         Journal::instance()->error("Sound manager is;t created");
     }
 
+    // Brakepipe initialization
+    brakepipe = new BrakePipe();
+
+    Journal::instance()->info(QString("Created brakepipe object at address: 0x%1")
+                              .arg(reinterpret_cast<quint64>(brakepipe), 0, 16));
+
 }
 
 void Train::placeTrain(const topology_pos_t &tp)
@@ -283,7 +288,7 @@ void Train::calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t)
         vehicle->setInclination(pe.inclination);
         vehicle->setCurvature(pe.curvature);
 
-        state_vector_t a = vehicle->getAcceleration(Y, t);
+        transfer_vector_t a = vehicle->getAcceleration(Y, t);
 
         memcpy(dYdt.data() + idx, Y.data() + idx + s, sizeof(double) * s);
         memcpy(dYdt.data() + idx + s, a.data(), sizeof(double) * s);
@@ -357,18 +362,19 @@ void Train::inputProcess()
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> Train::postStep(double t)
+QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> Train::postStep(double t)
 {
     (void) t;
     auto end = vehicles.end();
     auto begin = vehicles.begin();
 
-    QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> data;
+    QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> data;
 
     for (auto i = begin; i != end; ++i)
     {
-         data.append((*i)->getViewerData());
+         data.append(**i);
     }
+    data.squeeze();
     return data;
 }
 
@@ -622,11 +628,12 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
     for (auto vehicle = vehicles_add.begin(); vehicle != vehicles_add.end(); ++vehicle)
     {
         connectToTrain(vehicle);
+
         size_t s = (*vehicle)->getDegressOfFreedom();
 
         ode_order += 2 * s;
 
-        Journal::instance()->info(QString("Set index %1").arg(index));
+//        Journal::instance()->info(QString("Set index %1").arg(index));
 
         (*vehicle)->setIndex(index);
         index = ode_order;
@@ -637,7 +644,7 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
 
         if (!vehicles.isEmpty())
         {
-            Vehicle *prev =  *(vehicles.end() - 1);
+            Vehicle *prev =  *(vehicle - 1);
             prev->setNextVehicle(*vehicle);
             (*vehicle)->setPrevVehicle(prev);
             Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
@@ -651,6 +658,7 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
         Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
 
         y[index + s] = (*vehicle)->getVelocity() / Physics::kmh;
+
         Journal::instance()->info(QString("Update velocity %1").arg((*vehicle)->getVelocity()));
 
         double wheel_radius = (*vehicle)->getWheelDiameter() / 2.0;
@@ -660,9 +668,7 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
             y[index + s + j] = y[index + s] / wheel_radius;
         }
 
-
-        this->vehicles.push_back(*vehicle);
-
+        vehicles.append(*vehicle);
     }
 
     Journal::instance()->info(QString("State vector address: 0x%1")
@@ -670,8 +676,6 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
 
     Journal::instance()->info(QString("State vector derivative address: 0x%1")
                               .arg(reinterpret_cast<quint64>(dydt.data()), 0, 16));
-
-
 
     // Reload of couplings
     if (!loadCouplings())
@@ -682,26 +686,20 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
 
     updatePos();
 
-    // Brakepipe initialization
-    brakepipe = new BrakePipe();
-
-    Journal::instance()->info(QString("Created brakepipe object at address: 0x%1")
-                              .arg(reinterpret_cast<quint64>(brakepipe), 0, 16));
-
     brakepipe->setLength(trainLength);
     brakepipe->setNodesNum(vehicles.size());
+//    brakepipe->setBeginPressure(vehicles.first()->getBrakepipeBeginPressure());
+//    brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
+    brakepipe->init(init_data.brakepipe_conf);
 
-//    if (was_empty)
-//    {
-        brakepipe->setBeginPressure(init_data.charging_pressure * Physics::MPa + Physics::pA);
-        FileSystem &fs = FileSystem::getInstance();
-        brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
-//    }
-    initVehiclesBrakes();
+    updateBrakepipe();
 }
 
 bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 {
+    if (vehicles.isEmpty())
+        return false;
+
     size_t index = 0;
 
     Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(index));
@@ -710,11 +708,12 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     for (auto vehicle = vehicles_add.begin(); vehicle != vehicles_add.end(); ++vehicle)
     {
         connectToTrain(vehicle);
+
         size_t s = (*vehicle)->getDegressOfFreedom();
 
         ode_order += 2 * s;
 
-        Journal::instance()->info(QString("Set index %1").arg(index));
+//        Journal::instance()->info(QString("Set index %1").arg(index));
 
         (*vehicle)->setIndex(index);
 //        index = ode_order;
@@ -724,9 +723,9 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 
         Journal::instance()->info(QString("Set prev/next pointers"));
 
-        if (!tmp.isEmpty())
+        if (vehicle != vehicles_add.begin())
         {
-            Vehicle *prev =  *(vehicles.end() - 1);
+            Vehicle *prev =  *(vehicle - 1);
             prev->setNextVehicle(*vehicle);
             (*vehicle)->setPrevVehicle(prev);
             Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
@@ -746,8 +745,13 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     {
         size_t s = (*vehicle)->getDegressOfFreedom();
         (*vehicle)->setIndex(index);
+
+        Journal::instance()->info(QString("Update index %1").arg(index));
+
         index += 2 * s;
     }
+
+    tmp.append(vehicles);
 
     for (auto vehicle = tmp.begin(); vehicle != tmp.end(); ++vehicle)
     {
@@ -765,6 +769,7 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
         }
     }
 
+    vehicles = tmp;
 
     Journal::instance()->info(QString("State vector address: 0x%1")
                               .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
@@ -784,6 +789,8 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     updatePos();
 
     // Brakepipe initialization
+    delete brakepipe;
+
     brakepipe = new BrakePipe();
 
     Journal::instance()->info(QString("Created brakepipe object at address: 0x%1")
@@ -791,14 +798,9 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 
     brakepipe->setLength(trainLength);
     brakepipe->setNodesNum(vehicles.size());
+    brakepipe->init(init_data.brakepipe_conf);
 
-//    if (was_empty)
-//    {
-        brakepipe->setBeginPressure(init_data.charging_pressure * Physics::MPa + Physics::pA);
-        FileSystem &fs = FileSystem::getInstance();
-        brakepipe->init(fs.getConfigDir() + fs.separator() + "brakepipe.xml");
-//    }
-    initVehiclesBrakes();
+    updateBrakepipe();
 }
 
 void Train::connectToTrain(QVector<Vehicle *>::const_iterator vehicle)
@@ -848,6 +850,24 @@ void Train::updatePos(double coord)
     updatePos();
 }
 
+void Train::setSpeed(double V, const double coeff)
+{
+    for (auto vehicle = vehicles.begin(); vehicle != vehicles.end(); ++vehicle)
+    {
+        size_t s = (*vehicle)->getDegressOfFreedom();
+        size_t idx = (*vehicle)->getIndex();
+
+        y[idx + s] = V / coeff;
+
+        double wheel_radius = (*vehicle)->getWheelDiameter() / 2.0;
+
+        for (size_t j = 1; j < static_cast<size_t>(s); j++)
+        {
+            y[idx + s + j] = y[idx + s] / wheel_radius;
+        }
+    }
+}
+
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -855,7 +875,7 @@ bool Train::loadCouplings()
 {
     FileSystem &fs = FileSystem::getInstance();
 
-    int num_couplings = static_cast<int>(vehicles.size() - 1);
+    int num_couplings = (vehicles.size() - 1) - couplings.size();
 
     if (num_couplings == 0)
         return true;
@@ -932,14 +952,24 @@ void Train::setInitConditions(const init_data_t &init_data)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-void Train::initVehiclesBrakes()
+void Train::initVehiclesBrakes(double charging_pressure, double main_res_pressure)
 {
     Journal::instance()->info("Initialization of vehicles brake devices...");
 
-    for (size_t i = 0; i < vehicles.size(); ++i)
+    for (int i = 0; i < vehicles.size(); ++i)
     {
         double pTM = brakepipe->getPressure(i);
-        vehicles[i]->initBrakeDevices(init_data.charging_pressure, pTM, init_data.init_main_res_pressure);
+        vehicles.at(i)->initBrakeDevices(charging_pressure, pTM, main_res_pressure);
+    }
+}
+
+void Train::updateBrakepipe()
+{
+    Journal::instance()->info("Update vehicles brake devices...");
+
+    for (int i = 0; i < vehicles.size(); ++i)
+    {
+        brakepipe->setPressure(vehicles.at(i)->getBrakepipeBeginPressure(),i);
     }
 }
 

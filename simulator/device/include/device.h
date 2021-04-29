@@ -103,9 +103,9 @@ protected:
     state_vector_t k4;
 
     /// Config directory
-    std::string cfg_dir;
+    QString cfg_dir;
 
-    std::string modules_dir;
+    QString modules_dir;
 
     QString     DebugMsg;
 

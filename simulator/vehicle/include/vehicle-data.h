@@ -3,10 +3,36 @@
 
 #include    "solver-types.h"
 #include    "vehicle-controller.h"
+//#include    "global-const.h"
 #include    <vector>
 
-struct vehicle_data_t
+class VehicleData
 {
+public:
+    VehicleData();
+
+    VehicleData(const VehicleData &vehicle);
+
+    double getRailwayCoord() const { return railway_coord; }
+
+    double getVelocity()  const { return velocity; }
+
+    double getFwdCouplingForce() const { return R1; }
+
+    double getBwdCouplingForce() const { return R2; }
+
+    double getWheelAngle(size_t i) const;
+
+    double getWheelOmega(size_t i) const;
+
+    transfer_vector_t getCommonForces() const { return Q_a; }
+
+    transfer_vector_t getReactiveForces() const { return Q_r; }
+
+    transfer_vector_t getAcceleration() const { return a; }
+
+protected:
+
     /// Forward coupling force
     double  R1;
     /// Backward coupling force
@@ -17,27 +43,18 @@ struct vehicle_data_t
     double velocity;
 
     /// Wheels rotation angles
-    std::vector<double> wheel_rotation_angle;
+    transfer_vector_t wheel_rotation_angle;
     /// Wheels angular velocities
-    std::vector<double> wheel_omega;
+    transfer_vector_t wheel_omega;
 
     /// Active common forces
-    state_vector_t  Q_a;
+    transfer_vector_t Q_a;
     /// Reactive common forces
-    state_vector_t  Q_r;
+    transfer_vector_t Q_r;
     /// Vehicle common acceleration
-    state_vector_t  a;
+    transfer_vector_t a;
 
     vec3d position;
-
-    vehicle_data_t()
-        : R1(0.0)
-        , R2(0.0)
-        , railway_coord(0.0)
-        , velocity(0.0)
-    {
-
-    }
 
 };
 

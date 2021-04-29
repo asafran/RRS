@@ -125,7 +125,7 @@ void Vehicle::setDirection(int dir)
 //------------------------------------------------------------------------------
 void Vehicle::setForwardForce(double R1)
 {
-    this->vehicle_data.R1 = R1;
+    this->R1 = R1;
 }
 
 //------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ void Vehicle::setForwardForce(double R1)
 //------------------------------------------------------------------------------
 void Vehicle::setBackwardForce(double R2)
 {
-    this->vehicle_data.R2 = R2;
+    this->R2 = R2;
 }
 
 //------------------------------------------------------------------------------
@@ -141,8 +141,8 @@ void Vehicle::setBackwardForce(double R2)
 //------------------------------------------------------------------------------
 void Vehicle::setActiveCommonForce(size_t idx, double value)
 {
-    if (idx < vehicle_data.Q_a.size())
-        vehicle_data.Q_a[idx] = value;
+    if (idx < Q_a.size())
+        Q_a[idx] = value;
 }
 
 //------------------------------------------------------------------------------
@@ -150,8 +150,8 @@ void Vehicle::setActiveCommonForce(size_t idx, double value)
 //------------------------------------------------------------------------------
 void Vehicle::setReactiveCommonForce(size_t idx, double value)
 {
-    if (idx < vehicle_data.Q_r.size())
-        vehicle_data.Q_r[idx] = value;
+    if (idx < Q_r.size())
+        Q_r[idx] = value;
 }
 
 //------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ void Vehicle::setPayloadCoeff(double payload_coeff)
 //------------------------------------------------------------------------------
 void Vehicle::setRailwayCoord(double value)
 {
-    railway_coord0 = vehicle_data.railway_coord = value;
+    railway_coord0 = railway_coord = value;
 }
 
 //------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ void Vehicle::setRailwayCoord(double value)
 //------------------------------------------------------------------------------
 void Vehicle::setVelocity(double value)
 {
-    vehicle_data.velocity = value;
+    velocity = value;
 }
 
 //------------------------------------------------------------------------------
@@ -184,8 +184,8 @@ void Vehicle::setVelocity(double value)
 //------------------------------------------------------------------------------
 void Vehicle::setWheelAngle(size_t i, double value)
 {
-    if (i < vehicle_data.wheel_rotation_angle.size())
-        vehicle_data.wheel_rotation_angle[i] = value;
+    if (i < wheel_rotation_angle.size())
+        wheel_rotation_angle[i] = value;
 }
 
 //------------------------------------------------------------------------------
@@ -193,8 +193,8 @@ void Vehicle::setWheelAngle(size_t i, double value)
 //------------------------------------------------------------------------------
 void Vehicle::setWheelOmega(size_t i, double value)
 {
-    if (i < vehicle_data.wheel_omega.size())
-        vehicle_data.wheel_omega[i] = value;
+    if (i < wheel_omega.size())
+        wheel_omega[i] = value;
 }
 
 //------------------------------------------------------------------------------
@@ -287,7 +287,7 @@ float Vehicle::getAnalogSignal(size_t i)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-state_vector_t Vehicle::getAcceleration(state_vector_t &Y, double t)
+transfer_vector_t Vehicle::getAcceleration(state_vector_t &Y, double t)
 {
     (void) t;
 
@@ -311,23 +311,23 @@ state_vector_t Vehicle::getAcceleration(state_vector_t &Y, double t)
 
     for (size_t i = 1; i <= static_cast<size_t>(num_axis); i++)
     {
-        double eqWheelForce = (vehicle_data.Q_a[i] - Physics::fricForce(vehicle_data.Q_r[i], dir * Y[idx + s + i])) / rk;
+        double eqWheelForce = (Q_a[i] - Physics::fricForce(Q_r[i], dir * Y[idx + s + i])) / rk;
         sumEqWheelForce += eqWheelForce;
     }
 
     // Calculate equvivalent resistence force
-    double Fr = Physics::fricForce(W + vehicle_data.Q_r[0], dir * v);
+    double Fr = Physics::fricForce(W + Q_r[0], dir * v);
 
     // Vehicle body's acceleration
-    *vehicle_data.a.begin() = dir * (*vehicle_data.Q_a.begin() - Fr + vehicle_data.R1 - vehicle_data.R2 + sumEqWheelForce - G)
+    *a.begin() = dir * (*Q_a.begin() - Fr + R1 - R2 + sumEqWheelForce - G)
             / ( full_mass + num_axis * J_axis / rk / rk);
 
     // Wheels angle accelerations
-    auto end = vehicle_data.a.end();
-    for (auto accel_it = vehicle_data.a.begin() + 1; accel_it != end; ++accel_it)
-        *accel_it = *vehicle_data.a.begin() / rk;
+    auto end = a.end();
+    for (auto accel_it = a.begin() + 1; accel_it != end; ++accel_it)
+        *accel_it = *a.begin() / rk;
 
-    return vehicle_data.a;
+    return a;
 }
 
 //------------------------------------------------------------------------------
@@ -372,17 +372,17 @@ void Vehicle::integrationStep(state_vector_t &Y, double t, double dt)
 //------------------------------------------------------------------------------
 void Vehicle::integrationPostStep(state_vector_t &Y, double t)
 {
-    vehicle_data.railway_coord = Y[idx];
-    vehicle_data.velocity = Y[idx + s];
+    railway_coord = Y[idx];
+    velocity = Y[idx + s];
 
-    for (size_t i = 0; i < vehicle_data.wheel_rotation_angle.size(); i++)
+    for (size_t i = 0; i < wheel_rotation_angle.size(); i++)
     {
-        vehicle_data.wheel_rotation_angle[i] = Y[idx + i + 1];
-        vehicle_data.wheel_omega[i] = Y[idx + s + i + 1] * dir;
+        wheel_rotation_angle[i] = Y[idx + i + 1];
+        wheel_omega[i] = Y[idx + s + i + 1] * dir;
     }
 
     setRailwayCoord(Y[idx]);
-    vehicle_data.position = getPosition();
+    position = getPosition();
 
     postStep(t);
 }
@@ -390,7 +390,7 @@ void Vehicle::integrationPostStep(state_vector_t &Y, double t)
 void Vehicle::topologyStep()
 {
     x_prev = x_cur;
-    x_cur = vehicle_data.railway_coord;
+    x_cur = railway_coord;
 
     double prev_coord = traj_coord;
 
@@ -499,8 +499,8 @@ void Vehicle::receiveData(QByteArray data)
 //------------------------------------------------------------------------------
 double Vehicle::getWheelAngle(size_t i) const
 {
-    if (i < vehicle_data.wheel_rotation_angle.size())
-        return vehicle_data.wheel_rotation_angle[i];
+    if (i < wheel_rotation_angle.size())
+        return wheel_rotation_angle[i];
     else
         return 0;
 }
@@ -510,8 +510,8 @@ double Vehicle::getWheelAngle(size_t i) const
 //------------------------------------------------------------------------------
 double Vehicle::getWheelOmega(size_t i) const
 {
-    if (i < vehicle_data.wheel_omega.size())
-        return vehicle_data.wheel_omega[i];
+    if (i < wheel_omega.size())
+        return wheel_omega[i];
     else
         return 0;
 }
@@ -663,19 +663,19 @@ void Vehicle::loadConfiguration(QString cfg_path)
         cfg.getInt(secName, "NumAxis", tmp);        
 
         num_axis = static_cast<size_t>(tmp);
-        vehicle_data.wheel_rotation_angle.resize(num_axis);
-        vehicle_data.wheel_omega.resize(num_axis);
+        wheel_rotation_angle.resize(num_axis);
+        wheel_omega.resize(num_axis);
 
         Journal::instance()->info(QString("NumAxis: %1").arg(num_axis));
 
         s = num_axis + 1;
 
-        vehicle_data.Q_a.resize(s);
-        vehicle_data.Q_r.resize(s);
-        vehicle_data.a.resize(s);
+        Q_a.resize(s);
+        Q_r.resize(s);
+        a.resize(s);
 
-        for (size_t i = 0; i < vehicle_data.Q_a.size(); i++)
-            vehicle_data.Q_a[i] = vehicle_data.Q_r[i] = 0;
+        for (size_t i = 0; i < Q_a.size(); i++)
+            Q_a[i] = Q_r[i] = 0;
 
         cfg.getDouble(secName, "WheelInertia", J_axis);
 
