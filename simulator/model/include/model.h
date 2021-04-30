@@ -62,7 +62,7 @@ public:
     /// Model initialization
     bool init(const simulator_init_t &command_line);
 
-    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> loadTrain(init_data_t &init_data, const simulator_init_t &command_line);
+    Train *loadTrain(const init_data_t &init_data, const simulator_init_t &command_line);
 
     /// Check is simulation started
     bool isStarted() const;
@@ -71,7 +71,7 @@ signals:
 
     void logMessage(QString msg);
 
-    void sendDataToViewer(QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> data);
+    void sendDataToViewer(QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> data);
 
 //    void sendDataToTrain(QByteArray data);
 
@@ -116,7 +116,7 @@ private:
     double      control_delay;
 
     /// Train model
-    QVarLengthArray<Train *>       trains;
+    QSet<Train *>       trains;
 
     /// Profile
     Profile     *profile;

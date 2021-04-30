@@ -261,8 +261,6 @@ protected:
     double p0;
     /// Aux brakepipe pressure rate
     double auxRate;
-    /// Brakepipe pressure
-    double pTM;
 
     QString DebugMsg;
 

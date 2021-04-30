@@ -640,6 +640,10 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
 
         Journal::instance()->info(QString("Update index %1").arg(index));
 
+        Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
+        y.resize(ode_order);
+        dydt.resize(ode_order);
+
         Journal::instance()->info(QString("Set prev/next pointers"));
 
         if (!vehicles.isEmpty())
@@ -651,11 +655,10 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
                                       .arg(reinterpret_cast<quint64>(prev), 0, 16)
                                       .arg(reinterpret_cast<quint64>(*vehicle), 0, 16));
         }
-
-        y.resize(ode_order);
-        dydt.resize(ode_order);
-
-        Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
+        else
+        {
+            y[0] = (*vehicle)->getRailwayCoord();
+        }
 
         y[index + s] = (*vehicle)->getVelocity() / Physics::kmh;
 
@@ -683,6 +686,7 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
         Journal::instance()->error("Coupling model is't loaded");
         return false;
     }
+
 
     updatePos();
 
@@ -770,6 +774,8 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     }
 
     vehicles = tmp;
+
+    y[0] = vehicles.first()->getRailwayCoord();
 
     Journal::instance()->info(QString("State vector address: 0x%1")
                               .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
@@ -969,7 +975,7 @@ void Train::updateBrakepipe()
 
     for (int i = 0; i < vehicles.size(); ++i)
     {
-        brakepipe->setPressure(vehicles.at(i)->getBrakepipeBeginPressure(),i);
+        brakepipe->setPressure(vehicles.at(i)->getBrakepipePressure(),i);
     }
 }
 

@@ -21,6 +21,8 @@ public:
 
     double getBwdCouplingForce() const { return R2; }
 
+    double getBrakepipePressure() const { return pTM; }
+
     double getWheelAngle(size_t i) const;
 
     double getWheelOmega(size_t i) const;
@@ -41,6 +43,8 @@ protected:
     double railway_coord;
     /// Body velocity
     double velocity;
+    /// Brakepipe pressure
+    double pTM;
 
     /// Wheels rotation angles
     transfer_vector_t wheel_rotation_angle;

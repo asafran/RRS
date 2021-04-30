@@ -97,7 +97,7 @@ public:
     void inputProcess();
 
     /// Action after integration step
-    QVarLengthArray<vehicle_data_t, MAX_NUM_VEHICLES> postStep(double t);
+    QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> postStep(double t);
 
     /// Get first vehicle
     Vehicle *getFirstVehicle() const;
@@ -113,6 +113,8 @@ public:
     double getLength() const;
 
     size_t getVehiclesNumber() const;
+    /// Initialization of vehicles brakes
+    void initVehiclesBrakes(double charging_pressure, double main_res_pressure);
 
 //    QString getClientName();
 
@@ -202,8 +204,6 @@ private:
     /// Set initial conditions
 //    void setInitConditions(const init_data_t &init_data);
 
-    /// Initialization of vehicles brakes
-    void initVehiclesBrakes(double charging_pressure, double main_res_pressure);
 
 //    void timerEvent(QTimerEvent *event) override;
 };

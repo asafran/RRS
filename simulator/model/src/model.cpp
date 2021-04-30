@@ -104,73 +104,41 @@ bool Model::init(const simulator_init_t &command_line)
     // Train creation and initialization
     Journal::instance()->info("==== Train initialization ====");
 
-    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehilces = loadTrain(init_data, command_line);
+    trains.insert(loadTrain(init_data, command_line));
 
-    Train *train = new Train(profile, &topology, init_data, this);
-    trains.push_back(train);
 
-    Journal::instance()->info(QString("Created Train object at address: 0x%1")
-                              .arg(reinterpret_cast<quint64>(train), 0, 16));
-
-    connect(train, &Train::logMessage, this, &Model::logMessage);
-
+/*
     if (!train->init() || !train->addVehicles(vehilces))
         return false;    
-
+*/
     initControlPanel("control-panel");
 
 //    initSimClient("virtual-railway");
 
     Journal::instance()->info("Train is initialized successfully");
 
-    topology_pos_t tp;
-
-    if(command_line.traj_name)
-        tp.traj_name = *command_line.traj_name;
-    if(command_line.traj_coord)
-        tp.traj_coord = *command_line.traj_coord;
-    if(command_line.direction)
-        tp.dir = *command_line.direction;
-
-    train->placeTrain(tp);
-
     return true;
 }
 
-QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> Model::loadTrain(init_data_t &init_data, const simulator_init_t &command_line)
+Train *Model::loadTrain(const init_data_t &init_data, const simulator_init_t &command_line)
 {
     // Loading train config XML-file
     FileSystem &fs = FileSystem::getInstance();
     QString path = fs.combinePath(fs.getTrainsDir(), command_line.train_config.value() + ".xml");
-    QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> vehicles;
+    QVector<Vehicle *> vehicles;
 
     CfgReader cfg;
     // Check train config name
     if (!command_line.train_config.has_value())
     {
         Journal::instance()->error("Train config is't referenced");
-        return vehicles;
+        return nullptr;
     }
     if (!cfg.load(path))
     {
         Journal::instance()->error("Train's config file" + path + "is't opened");
-        return vehicles;
-    }
-    // Get charging pressure and no air flag
-    if (!cfg.getDouble("Common", "ChargingPressure", init_data.charging_pressure))
-    {
-        init_data.charging_pressure = 0.5;
-    }
-
-    if (!cfg.getDouble("Common", "InitMainResPressure", init_data.init_main_res_pressure))
-    {
-        init_data.init_main_res_pressure = 0.9;
-    }
-
-    if (!cfg.getBool("Common", "NoAir", init_data.no_air))
-    {
-        init_data.no_air = false;
-    }
+        return nullptr;
+    }    
 
     QDomNode vehicle_node = cfg.getFirstSection("Vehicle");
     // Parsing of train config file
@@ -258,12 +226,12 @@ QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> Model::loadTrain(init_data_t &init_
 
             if (vehicle == Q_NULLPTR)
             {
-//                    Journal::instance()->error("Vehicle " + module_name + " is't loaded");
+                    Journal::instance()->error("Vehicle " + module_name + " is't loaded");
                 break;
             }
 
-//                Journal::instance()->info(QString("Created Vehicle object at address: 0x%1")
-//                                          .arg(reinterpret_cast<quint64>(vehicle), 0, 16));
+                Journal::instance()->info(QString("Created Vehicle object at address: 0x%1")
+                                          .arg(reinterpret_cast<quint64>(vehicle), 0, 16));
 
 
             QString relConfigPath = fs.combinePath(q_module_cfg_name, q_module_cfg_name);
@@ -275,6 +243,16 @@ QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> Model::loadTrain(init_data_t &init_
             vehicle->init(fs.getVehiclesDir() + fs.separator() + relConfigPath + ".xml");
 
             vehicle->setPayloadCoeff(payload_coeff);
+//            vehicle->setVelocity(0);
+
+            double charging_pressure = 0.5;
+            bool no_air = false;
+
+            cfg.getDouble("Common", "ChargingPressure", charging_pressure);
+            cfg.getBool("Common","NoAir", no_air);
+
+            if(!no_air)
+                vehicle->setBrakepipePressure(charging_pressure);
 
             vehicles.push_back(vehicle);
 
@@ -283,8 +261,41 @@ QVarLengthArray<Vehicle *, MAX_NUM_VEHICLES> Model::loadTrain(init_data_t &init_
 
     }
 
-    //animation_manager = new AnimationManager(&animations);
-    return vehicles;
+    Train *train = new Train(profile, &topology, init_data, this);
+    train->init();
+
+    train->addVehiclesBack(vehicles);
+
+    Journal::instance()->info(QString("Created Train object at address: 0x%1")
+                              .arg(reinterpret_cast<quint64>(train), 0, 16));
+
+    connect(train, &Train::logMessage, this, &Model::logMessage);
+
+    double charging_pressure = 0.5;
+    double main_res_pressure = 0.9;
+
+    if (cfg.getDouble("Common", "ChargingPressure", charging_pressure)
+            && cfg.getDouble("Common", "InitMainResPressure", main_res_pressure))
+    {
+        train->initVehiclesBrakes(charging_pressure, main_res_pressure);
+    }
+    if(command_line.init_coord)
+        train->updatePos(*command_line.init_coord);
+    if(command_line.init_velocity)
+        train->setSpeed(*command_line.init_velocity, Physics::kmh);
+
+    topology_pos_t tp;
+
+    if(command_line.traj_name)
+        tp.traj_name = *command_line.traj_name;
+    if(command_line.traj_coord)
+        tp.traj_coord = *command_line.traj_coord;
+    if(command_line.direction)
+        tp.dir = *command_line.direction;
+
+    train->placeTrain(tp);
+
+    return train;
 }
 
 //------------------------------------------------------------------------------
@@ -387,7 +398,7 @@ void Model::loadInitData(init_data_t &init_data)
     if (cfg.load(cfg_path))
     {
         QString secName = "InitData";
-
+/*
         if (!cfg.getDouble(secName, "InitCoord", init_data.init_coord))
         {
             init_data.init_coord = 1.0;
@@ -397,7 +408,7 @@ void Model::loadInitData(init_data_t &init_data)
         {
             init_data.init_velocity = 0.0;
         }
-
+*/
         if (!cfg.getString(secName, "Profile", init_data.profile_path))
         {
             init_data.profile_path = "default";
@@ -412,14 +423,14 @@ void Model::loadInitData(init_data_t &init_data)
         {
             init_data.integration_time_interval = 100;
         }
-
+/*
         if (!cfg.getInt(secName, "ControlTimeInterval", init_data.control_time_interval))
         {
             init_data.control_time_interval = 50;
         }
 
         control_delay = static_cast<double>(init_data.control_time_interval) / 1000.0;
-
+*/
         if (!cfg.getBool(secName, "DebugPrint", init_data.debug_print))
         {
             init_data.debug_print = false;
@@ -444,12 +455,12 @@ void Model::overrideByCommandLine(init_data_t &init_data,
 
     if (command_line.debug_print)
         init_data.debug_print = *command_line.debug_print;
-
+/*
     if (command_line.init_coord)
     {
         init_data.init_coord = *command_line.init_coord;
     }
-
+*/
     if (command_line.direction)
         init_data.direction = *command_line.direction;
 
@@ -554,7 +565,7 @@ void Model::initControlPanel(QString cfg_path)
         if (!cfg.getInt(secName, "Vehicle", v_idx))
             v_idx = 0;
 
-        Vehicle *vehicle = trains[0]->getVehicles()->at(static_cast<size_t>(v_idx));
+        Vehicle *vehicle = trains[0]->getVehicles().at(static_cast<size_t>(v_idx));
 
         connect(vehicle, &Vehicle::sendFeedBackSignals,
                 control_panel, &VirtualInterfaceDevice::receiveFeedback);
