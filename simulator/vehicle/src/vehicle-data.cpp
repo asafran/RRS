@@ -5,6 +5,7 @@ VehicleData::VehicleData()
     , R2(0.0)
     , railway_coord(0.0)
     , velocity(0.0)
+    , pTM(0.0)
 {
 
 }
@@ -14,6 +15,7 @@ VehicleData::VehicleData(const VehicleData &vehicle)
     , R2(vehicle.R2)
     , railway_coord(vehicle.railway_coord)
     , velocity(vehicle.railway_coord)
+    , pTM(vehicle.pTM)
     , wheel_rotation_angle(vehicle.wheel_rotation_angle)
     , wheel_omega(vehicle.wheel_omega)
     , Q_a(vehicle.Q_a)

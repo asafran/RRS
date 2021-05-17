@@ -137,6 +137,7 @@ private:
     /// Actions after integration step
     void postStep(double t);
 */
+    void topologyStep(QSet<Train *>::const_iterator train_iterator);
     /// Debug print to stdout
     void debugPrint();
 
@@ -150,7 +151,6 @@ private:
     void configSolver(solver_config_t &solver_config);
 
     void initControlPanel(QString cfg_path);
-
 
     void controlStep(double &control_time, const double control_delay);
 

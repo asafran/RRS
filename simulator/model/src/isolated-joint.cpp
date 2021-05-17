@@ -32,7 +32,7 @@ void IsolatedJoint::configure(CfgReader &cfg, QDomNode secNode, traj_list_t &tra
     cfg.getString(secNode, "bwdTraj", bwd_name);
     bwdTraj = traj_list.value(bwd_name, Q_NULLPTR);
 
-    if (fwdTraj != Q_NULLPTR)
+    if (fwdTraj != Q_NULLPTR && !reverser)
     {
         fwdTraj->setBwdConnector(this);
     }
@@ -40,6 +40,11 @@ void IsolatedJoint::configure(CfgReader &cfg, QDomNode secNode, traj_list_t &tra
     if (bwdTraj != Q_NULLPTR)
     {
         bwdTraj->setFwdConnector(this);
+    }
+
+    if (reverser && bwdTraj != Q_NULLPTR && fwdTraj != Q_NULLPTR)
+    {
+        fwdTraj->setFwdConnector(this);
     }
 }
 

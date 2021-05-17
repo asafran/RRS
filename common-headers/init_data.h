@@ -29,7 +29,7 @@
 //------------------------------------------------------------------------------
 struct init_data_t
 {
-    int     direction;
+//    int     direction;
     QString profile_path;
     double  prof_step;
     QString route_dir;
@@ -46,9 +46,9 @@ struct init_data_t
     init_data_t()
 //        : init_coord(0)
 //        , init_velocity(0)
-        : direction(1)
+//        : direction(1)
 //        , profile_path("")
-        , prof_step(100.0)
+        : prof_step(100.0)
 //        , route_dir("")
         , coupling_module("default_coupling")
 //        , brakepipe_conf("")

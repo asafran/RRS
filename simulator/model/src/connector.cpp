@@ -7,6 +7,7 @@ Connector::Connector(QObject *parent) : QObject(parent)
   , fwdTraj(Q_NULLPTR)
   , bwdTraj(Q_NULLPTR)
   , state(0)
+  , reverser(false)
 {
 
 }
@@ -28,4 +29,5 @@ void Connector::configure(CfgReader &cfg, QDomNode secNode, traj_list_t &traj_li
 
     cfg.getString(secNode, "Name", name);
     cfg.getInt(secNode, "state", state);
+    cfg.getBool(secNode, "Reverser", reverser);
 }

@@ -65,7 +65,7 @@ public:
     void setCurvature(double curv);
 
     /// Set direction
-    void setDirection(int dir);
+//    void setDirection(int dir);
 
     /// Set forward coupling force
     void setForwardForce(double R1);
@@ -255,7 +255,7 @@ protected:
     double  curv;
 
     /// Railway motion direction
-    int     dir;
+    static constexpr int    dir = 1;
 
     /// Pressure in begin of brakepipe
     double p0;

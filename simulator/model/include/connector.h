@@ -29,6 +29,8 @@ public:
 
     QString getName() const { return this->name; }
 
+    bool isReversed() const { return reverser; }
+
 protected:
 
     Trajectory *fwdTraj;
@@ -36,6 +38,8 @@ protected:
     Trajectory *bwdTraj;
 
     int state;
+
+    bool reverser;
 
     QString name;
 };

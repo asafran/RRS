@@ -44,6 +44,8 @@ public:
 
     bool isBusy() const { return !vehicles_on_traj.isEmpty(); }
 
+    QSet<VehicleController *> getTrajVehicleSet() const { return vehicles_on_traj; }
+
 protected:
 
     QString         name;

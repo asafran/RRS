@@ -16,6 +16,7 @@
 #include    "model.h"
 
 #include    <QTimerEvent>
+#include    <math.h>
 
 #include    "CfgReader.h"
 #include    "Journal.h"
@@ -681,16 +682,69 @@ void Model::controlStep(double &control_time, const double control_delay)
 */
 //------------------------------------------------------------------------------
 //
-/*------------------------------------------------------------------------------
-void Model::topologyStep()
+//------------------------------------------------------------------------------
+void Model::topologyStep(QSet<Train *>::const_iterator train_iterator)
 {
-    for (size_t i = 0; i < train->getVehicles()->size(); ++i)
+    Vehicle *first_v = *(*train_iterator)->getFirstVehicle();
+    Vehicle *last_v = *(*train_iterator)->getLastVehicle();
+
+    QSet<VehicleController *> first_set(first_v->getCurrentTraj()->getTrajVehicleSet());
+    QSet<VehicleController *> last_set(last_v->getCurrentTraj()->getTrajVehicleSet());
+
+    if (first_set.size() == 1 && last_set.size() == 1)
+        return;
+    for( auto train = trains.begin(); train != trains.end(); ++train )
     {
-        VehicleController *vc = topology.getVehicleController(i);
-        vc[i].setRailwayCoord(train->getVehicles()->at(i)->getRailwayCoord());
+        if (train == train_iterator)
+            continue;;
+
+        Vehicle *first_iterator_v = *(*train_iterator)->getFirstVehicle();
+        Vehicle *last_iterator_v = *(*train_iterator)->getLastVehicle();
+
+        if (first_set.contains(first_iterator_v))
+        {
+            if (std::abs(first_v->getTrajCoord() - first_iterator_v->getTrajCoord()) <
+                    0.5 * (first_v->getLength() + first_iterator_v->getLength()))
+            {
+                couple();
+                continue;
+            }
+
+        }
+        if (first_set.contains(last_iterator_v))
+        {
+            if (std::abs(first_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
+                    0.5 * (first_v->getLength() + last_iterator_v->getLength()))
+            {
+                (*train)->addVehiclesBack((*train_iterator)->getVehicles(), false);
+                delete *train_iterator;
+                continue;
+            }
+
+        }
+        if (last_set.contains(last_iterator_v))
+        {
+            if (std::abs(last_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
+                    0.5 * (last_v->getLength() + last_iterator_v->getLength()))
+            {
+                (*train_iterator)->addVehiclesBack((*train)->getVehicles(), true);
+                continue;
+            }
+
+        }
+        if (last_set.contains(first_iterator_v))
+        {
+            if (std::abs(last_v->getTrajCoord() - first_iterator_v->getTrajCoord()) <
+                    0.5 * (last_v->getLength() + first_iterator_v->getLength()))
+            {
+                (*train_iterator)->addVehiclesBack((*train)->getVehicles(), false);
+                delete *train;
+                continue;
+            }
+        }
     }
 }
-*/
+
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -709,7 +763,7 @@ void Model::timerEvent(QTimerEvent *event)
 
             is_step_correct = (*train)->step(t, dt);
 
-            //topologyStep();
+            topologyStep(train);
 
             tau += dt;
             t += dt;

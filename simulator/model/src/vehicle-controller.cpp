@@ -34,7 +34,7 @@ void VehicleController::setRailwayCoord(double x)
 
     double prev_coord = traj_coord;
 
-    traj_coord += dir * (x_cur - x_prev);
+    traj_coord += direction * (x_cur - x_prev);
 
     prev_traj = current_traj;
 
@@ -57,6 +57,12 @@ void VehicleController::setRailwayCoord(double x)
             current_traj = prev_traj;
             traj_coord = prev_coord;
             break;
+        }
+
+        if (conn->isReversed())
+        {
+            traj_coord = current_traj->getLength() - traj_coord;
+            direction *= -1;
         }
     }
 

@@ -64,9 +64,9 @@ public:
     /// Train initialization
     bool init();
 
-    bool addVehiclesBack(const QVector<Vehicle *> vehicles_add);
+    bool addVehiclesBack(QVector<Vehicle *> vehicles_add, bool reversed);
 
-    bool addVehiclesFront(const QVector<Vehicle *> vehicles_add);
+    bool addVehiclesFront(QVector<Vehicle *> vehicles_add);
 
     void updatePos();
 
@@ -89,7 +89,7 @@ public:
     /// Integration step
     bool step(double t, double &dt);
 
-    void connectToTrain(QVector<Vehicle *>::const_iterator vehicle);
+    void connectToTrain(Vehicle *vehicle);
 
     /// Integration step for vehicles ODE's
     void vehiclesStep(double t, double dt);
@@ -100,10 +100,12 @@ public:
     QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> postStep(double t);
 
     /// Get first vehicle
-    Vehicle *getFirstVehicle() const;
+    QVector<Vehicle *>::const_iterator getFirstVehicle();
 
     /// Get last vehicle
-    Vehicle *getLastVehicle() const;
+    QVector<Vehicle *>::const_iterator getLastVehicle();
+
+    QVector<Vehicle *>::const_iterator getEndVehicle();
 
     double getVelocity(size_t i) const;
 
@@ -144,7 +146,7 @@ private:
     size_t          ode_order;
 
     /// Direction of motion on railway
-    int             dir;
+//    int             dir;
 
     /// Profile manager
     Profile     *profile;
@@ -198,6 +200,8 @@ private:
 //    bool loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicle *> vehicles_t);
     /// Couplings loading
     bool loadCouplings();
+
+    void appendVehicle(Vehicle *vehicle);
 
     void topologyStep();
 

@@ -26,7 +26,7 @@ public:
 
     void setTrajCoord(double traj_coord) { this->traj_coord = traj_coord; }
 
-    void setDirection(int dir) { this->dir = dir; }
+    void setTopologyDirection(int dir) { this->dir = dir; }
 
     vec3d getPosition(vec3d &attitude) const;
 
@@ -47,7 +47,7 @@ private:
     double  x_cur;
 
     /// Направление движения
-    int    dir;
+    int    direction;
 
     /// Координата, в пределах текущей траектории
     double traj_coord;

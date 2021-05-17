@@ -13,7 +13,6 @@ Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
-  , dir(1)
   , profile(profile)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
@@ -30,7 +29,6 @@ Train::Train(Profile *profile, Topology *topology, init_data_t init_data, QObjec
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
-  , dir(init_data.direction)
   , profile(profile)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
@@ -181,19 +179,21 @@ void Train::placeTrain(const topology_pos_t &tp)
 
     vehicles[0]->setTrajCoord(tp.traj_coord);
     vehicles[0]->setInitCurrentTraj(topo->getTrajList()[tp.traj_name]);
-    vehicles[0]->setDirection(tp.dir);
-    vehicles[0]->setInitRailwayCoord(vehicles[0]->getRailwayCoord());
+    vehicles[0]->setTopologyDirection(tp.dir);
+    vehicles[0]->setInitRailwayCoord(0.0);
 
     double traj_coord = tp.traj_coord;
     Trajectory *cur_traj = topo->getTrajList()[tp.traj_name];
 
     cur_traj->setBusy(vehicles[0]);
 
+    int direction = tp.dir;
+
     for (auto i = vehicles.begin(); i != vehicles.end(); ++i)
     {
         double L = (*(i-1))->getLength() + (*i)->getLength() / 2.0;
 
-        traj_coord = traj_coord - tp.dir * L;
+        traj_coord = traj_coord - direction * L;
 
         while (traj_coord < 0)
         {
@@ -235,12 +235,18 @@ void Train::placeTrain(const topology_pos_t &tp)
                 Journal::instance()->error("Error placing train on topology_pos_t");
                 return;
             }
+
+            if (conn->isReversed())
+            {
+                traj_coord = cur_traj->getLength() - traj_coord;
+                direction *= -1;
+            }
         }
 
         (*i)->setTrajCoord(traj_coord);
         (*i)->setInitCurrentTraj(cur_traj);
-        (*i)->setDirection(tp.dir);
-        (*i)->setInitRailwayCoord((*i)->getRailwayCoord());
+        (*i)->setTopologyDirection(direction);
+        (*i)->setInitRailwayCoord(0.0);
 
         cur_traj->setBusy(*i);
     }
@@ -270,13 +276,13 @@ void Train::calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t)
             size_t s1 = vehicle1->getDegressOfFreedom();
 
             double ds = Y[idx] - Y[idx1] -
-                    dir * vehicle->getLength() / 2 -
-                    dir * vehicle1->getLength() / 2;
+                    vehicle->getLength() / 2 -
+                    vehicle1->getLength() / 2;
 
             double dv = Y[idx + s] - Y[idx1 + s1];
 
             Coupling *coup = *coup_it;
-            double R = dir * coup->getForce(ds, dv);
+            double R = coup->getForce(ds, dv);
             ++coup_it;
 
             vehicle->setBackwardForce(R);
@@ -381,17 +387,25 @@ QVarLengthArray<VehicleData, MAX_NUM_VEHICLES> Train::postStep(double t)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Vehicle *Train::getFirstVehicle() const
+QVector<Vehicle *>::const_iterator Train::getFirstVehicle()
 {
-    return *vehicles.begin();
+    return vehicles.cbegin();
 }
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Vehicle *Train::getLastVehicle() const
+QVector<Vehicle *>::const_iterator Train::getLastVehicle()
 {
-    return *(vehicles.end() - 1);
+    return (vehicles.cend() - 1);
+}
+
+//------------------------------------------------------------------------------
+//
+//------------------------------------------------------------------------------
+QVector<Vehicle *>::const_iterator Train::getEndVehicle()
+{
+    return vehicles.cend();
 }
 
 //------------------------------------------------------------------------------
@@ -451,12 +465,12 @@ QString Train::getTrainID()
 */
 //------------------------------------------------------------------------------
 //
-//------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------
 int Train::getDirection() const
 {
     return dir;
 }
-
+*/
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
@@ -619,61 +633,46 @@ bool Train::loadTrain(const init_data_t &init_data, const QVarLengthArray<Vehicl
 }
 */
 
-bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
+bool Train::addVehiclesBack(QVector<Vehicle *> vehicles_add, bool reversed)
 {
-    size_t index = ode_order;
+    Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(ode_order));
 
-    Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(index));
-
-    for (auto vehicle = vehicles_add.begin(); vehicle != vehicles_add.end(); ++vehicle)
+    if(reversed)
     {
-        connectToTrain(vehicle);
-
-        size_t s = (*vehicle)->getDegressOfFreedom();
-
-        ode_order += 2 * s;
-
-//        Journal::instance()->info(QString("Set index %1").arg(index));
-
-        (*vehicle)->setIndex(index);
-        index = ode_order;
-
-        Journal::instance()->info(QString("Update index %1").arg(index));
-
-        Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
-        y.resize(ode_order);
-        dydt.resize(ode_order);
-
-        Journal::instance()->info(QString("Set prev/next pointers"));
-
-        if (!vehicles.isEmpty())
+        for (auto vehicle = vehicles_add.rbegin(); vehicle != vehicles_add.rend(); ++vehicle)
         {
-            Vehicle *prev =  *(vehicle - 1);
-            prev->setNextVehicle(*vehicle);
-            (*vehicle)->setPrevVehicle(prev);
-            Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
-                                      .arg(reinterpret_cast<quint64>(prev), 0, 16)
-                                      .arg(reinterpret_cast<quint64>(*vehicle), 0, 16));
+            appendVehicle(*vehicle);
+
+            if (*vehicle != *vehicles.begin())
+            {
+                Journal::instance()->info(QString("Set prev/next pointers"));
+                Vehicle *prev =  *(vehicle - 1);
+                prev->setNextVehicle(*vehicle);
+                (*vehicle)->setPrevVehicle(prev);
+                Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
+                                          .arg(reinterpret_cast<quint64>(prev), 0, 16)
+                                          .arg(reinterpret_cast<quint64>(*vehicle), 0, 16));
+            }
         }
-        else
-        {
-            y[0] = (*vehicle)->getRailwayCoord();
-        }
-
-        y[index + s] = (*vehicle)->getVelocity() / Physics::kmh;
-
-        Journal::instance()->info(QString("Update velocity %1").arg((*vehicle)->getVelocity()));
-
-        double wheel_radius = (*vehicle)->getWheelDiameter() / 2.0;
-
-        for (size_t j = 1; j < static_cast<size_t>(s); j++)
-        {
-            y[index + s + j] = y[index + s] / wheel_radius;
-        }
-
-        vehicles.append(*vehicle);
     }
+    else
+    {
+        for (auto vehicle = vehicles_add.begin(); vehicle != vehicles_add.end(); ++vehicle)
+        {
+            appendVehicle(*vehicle);
 
+            if (*vehicle != *vehicles.begin())
+            {
+                Journal::instance()->info(QString("Set prev/next pointers"));
+                Vehicle *prev =  *(vehicle - 1);
+                prev->setNextVehicle(*vehicle);
+                (*vehicle)->setPrevVehicle(prev);
+                Journal::instance()->info(QString("Vehicle 0x%1: next 0x%2, vehicle 0x%2: prev 0x%1")
+                                          .arg(reinterpret_cast<quint64>(prev), 0, 16)
+                                          .arg(reinterpret_cast<quint64>(*vehicle), 0, 16));
+            }
+        }
+    }
     Journal::instance()->info(QString("State vector address: 0x%1")
                               .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
 
@@ -687,7 +686,7 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
         return false;
     }
 
-
+    y[0] = 0;
     updatePos();
 
     brakepipe->setLength(trainLength);
@@ -699,7 +698,42 @@ bool Train::addVehiclesBack(const QVector<Vehicle *> vehicles_add)
     updateBrakepipe();
 }
 
-bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
+void Train::appendVehicle(Vehicle *vehicle)
+{
+    connectToTrain(vehicle);
+
+    size_t s = vehicle->getDegressOfFreedom();
+
+//    Journal::instance()->info(QString("Set index %1").arg(index));
+    size_t index = ode_order;
+
+    ode_order += 2 * s;
+
+    vehicle->setIndex(index);
+//    index = ode_order;
+
+    Journal::instance()->info(QString("Update index %1").arg(index));
+
+    Journal::instance()->info(QString("Resize ODE vectors, order %1").arg(ode_order));
+    y.resize(ode_order);
+    dydt.resize(ode_order);
+
+    y[index + s] = vehicle->getVelocity();
+
+    Journal::instance()->info(QString("Update velocity %1, %2 kmh").arg(vehicle->getVelocity())
+                              .arg(vehicle->getVelocity() * Physics::kmh));
+
+    double wheel_radius = vehicle->getWheelDiameter() / 2.0;
+
+    for (size_t j = 1; j < static_cast<size_t>(s); j++)
+    {
+        y[index + s + j] = y[index + s] / wheel_radius;
+    }
+
+    vehicles.append(vehicle);
+}
+
+bool Train::addVehiclesFront(QVector<Vehicle *> vehicles_add)
 {
     if (vehicles.isEmpty())
         return false;
@@ -709,9 +743,9 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     Journal::instance()->info(QString("Pushing back vehicles, current index %1").arg(index));
     QVector<Vehicle *> tmp;
 
-    for (auto vehicle = vehicles_add.begin(); vehicle != vehicles_add.end(); ++vehicle)
+    for (auto vehicle = vehicles_add.rbegin(); vehicle != vehicles_add.rend(); ++vehicle)
     {
-        connectToTrain(vehicle);
+        connectToTrain(*vehicle);
 
         size_t s = (*vehicle)->getDegressOfFreedom();
 
@@ -727,7 +761,7 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 
         Journal::instance()->info(QString("Set prev/next pointers"));
 
-        if (vehicle != vehicles_add.begin())
+        if (vehicle != vehicles_add.rbegin())
         {
             Vehicle *prev =  *(vehicle - 1);
             prev->setNextVehicle(*vehicle);
@@ -744,6 +778,8 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 
         tmp.append(*vehicle);
     }
+
+//    tmp.append(vehicles_add);
 
     for (auto vehicle = vehicles.begin(); vehicle != vehicles.end(); ++vehicle)
     {
@@ -762,8 +798,9 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
         size_t s = (*vehicle)->getDegressOfFreedom();
         size_t idx = (*vehicle)->getIndex();
 
-        y[idx + s] = (*vehicle)->getVelocity() / Physics::kmh;
-        Journal::instance()->info(QString("Update velocity %1").arg((*vehicle)->getVelocity()));
+        y[idx + s] = (*vehicle)->getVelocity();
+        Journal::instance()->info(QString("Update velocity %1, %2 kmh").arg((*vehicle)->getVelocity())
+                                  .arg((*vehicle)->getVelocity() * Physics::kmh));
 
         double wheel_radius = (*vehicle)->getWheelDiameter() / 2.0;
 
@@ -775,7 +812,7 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
 
     vehicles = tmp;
 
-    y[0] = vehicles.first()->getRailwayCoord();
+//    y[0] = vehicles.first()->getRailwayCoord();
 
     Journal::instance()->info(QString("State vector address: 0x%1")
                               .arg(reinterpret_cast<quint64>(y.data()), 0, 16));
@@ -791,7 +828,7 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
         Journal::instance()->error("Coupling model is't loaded");
         return false;
     }
-
+    y[0] = 0;
     updatePos();
 
     // Brakepipe initialization
@@ -809,26 +846,27 @@ bool Train::addVehiclesFront(const QVector<Vehicle *> vehicles_add)
     updateBrakepipe();
 }
 
-void Train::connectToTrain(QVector<Vehicle *>::const_iterator vehicle)
+void Train::connectToTrain(Vehicle * vehicle)
 {
-    (*vehicle)->setParent(this);
-    connect(*vehicle, &Vehicle::logMessage, this, &Train::logMessage);
+    vehicle->disconnect();
+    vehicle->setParent(this);
+    connect(vehicle, &Vehicle::logMessage, this, &Train::logMessage);
 
-    (*vehicle)->setDirection(dir);
+//    (*vehicle)->setDirection(dir);
 
-    trainMass += (*vehicle)->getMass();
-    trainLength += (*vehicle)->getLength();
+    trainMass += vehicle->getMass();
+    trainLength += vehicle->getLength();
 
     Journal::instance()->info(QString("Update train mass and lenght: %1, %2").arg(trainMass).arg(trainLength));
 
     // Loading sounds
-    soundMan->loadSounds((*vehicle)->getSoundsDir());
+    soundMan->loadSounds(vehicle->getSoundsDir());
 
-    connect(*vehicle, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
-    connect(*vehicle, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
-    connect(*vehicle, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
-    connect(*vehicle, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
-    connect(*vehicle, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
+    connect(vehicle, &Vehicle::soundPlay, soundMan, &SoundManager::play, Qt::DirectConnection);
+    connect(vehicle, &Vehicle::soundStop, soundMan, &SoundManager::stop, Qt::DirectConnection);
+    connect(vehicle, &Vehicle::soundSetVolume, soundMan, &SoundManager::setVolume, Qt::DirectConnection);
+    connect(vehicle, &Vehicle::soundSetPitch, soundMan, &SoundManager::setPitch, Qt::DirectConnection);
+    connect(vehicle, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
 }
 
 void Train::updatePos()
@@ -843,7 +881,7 @@ void Train::updatePos()
         double Li = vehicles[i]->getLength();
         size_t idxi = vehicles[i]->getIndex();
 
-        y[idxi] = y[idxi_1] - dir *(Li + Li_1) / 2;
+        y[idxi] = y[idxi_1] - (Li + Li_1) / 2;
 
         Journal::instance()->info(QString("Vehicle[%2] coordinate: %1").arg(y[idxi]).arg(i, 3));
     }
@@ -851,7 +889,7 @@ void Train::updatePos()
 
 void Train::updatePos(double coord)
 {
-    double x0 = coord * 1000.0 - dir * this->getFirstVehicle()->getLength() / 2.0;
+    double x0 = coord * 1000.0 - (*this->getFirstVehicle())->getLength() / 2.0;
     y[0] = x0;
     updatePos();
 }
