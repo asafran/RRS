@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 //
 //      Train motion model simulation control
 //      (c) maisvendoo, 02/09/2018
@@ -84,7 +84,7 @@ bool Model::init(const simulator_init_t &command_line)
 
     // Load profile
     Journal::instance()->info("==== Profile data loading ====");
-    profile = new Profile(init_data.direction, init_data.route_dir.toStdString());
+//    profile = new Profile(init_data.direction, init_data.route_dir.toStdString());
 
     Journal::instance()->info(QString("State Profile object at address: 0x%1")
                               .arg(reinterpret_cast<quint64>(profile), 0, 16));
@@ -262,10 +262,10 @@ Train *Model::loadTrain(const init_data_t &init_data, const simulator_init_t &co
 
     }
 
-    Train *train = new Train(profile, &topology, init_data, this);
+    Train *train = new Train(&topology, init_data, this);
     train->init();
 
-    train->addVehiclesBack(vehicles);
+    train->addVehiclesBack(vehicles, false);
 
     Journal::instance()->info(QString("Created Train object at address: 0x%1")
                               .arg(reinterpret_cast<quint64>(train), 0, 16));
@@ -280,21 +280,19 @@ Train *Model::loadTrain(const init_data_t &init_data, const simulator_init_t &co
     {
         train->initVehiclesBrakes(charging_pressure, main_res_pressure);
     }
-    if(command_line.init_coord)
-        train->updatePos(*command_line.init_coord);
     if(command_line.init_velocity)
         train->setSpeed(*command_line.init_velocity, Physics::kmh);
 
     topology_pos_t tp;
 
-    if(command_line.traj_name)
+    if(command_line.traj_name && command_line.traj_coord && command_line.direction)
+    {
         tp.traj_name = *command_line.traj_name;
-    if(command_line.traj_coord)
         tp.traj_coord = *command_line.traj_coord;
-    if(command_line.direction)
         tp.dir = *command_line.direction;
 
-    train->placeTrain(tp);
+        train->updatePos(tp);
+    }
 
     return train;
 }
@@ -461,10 +459,10 @@ void Model::overrideByCommandLine(init_data_t &init_data,
     {
         init_data.init_coord = *command_line.init_coord;
     }
-*/
+
     if (command_line.direction)
         init_data.direction = *command_line.direction;
-
+*/
     Journal::instance()->info("Apply command line settinds");
 }
 
@@ -685,65 +683,96 @@ void Model::controlStep(double &control_time, const double control_delay)
 //------------------------------------------------------------------------------
 void Model::topologyStep(QSet<Train *>::const_iterator train_iterator)
 {
-    Vehicle *first_v = *(*train_iterator)->getFirstVehicle();
-    Vehicle *last_v = *(*train_iterator)->getLastVehicle();
+    Vehicle *first_iterator_v = *(*train_iterator)->getFirstVehicle(); // первая ПЕ просчитываемого поезда
+    Vehicle *last_iterator_v = *(*train_iterator)->getLastVehicle(); // последняя ПЕ
 
-    QSet<VehicleController *> first_set(first_v->getCurrentTraj()->getTrajVehicleSet());
-    QSet<VehicleController *> last_set(last_v->getCurrentTraj()->getTrajVehicleSet());
+    Trajectory *first_v_traj = first_iterator_v->getCurrentTraj();
+    Trajectory *last_v_traj = last_iterator_v->getCurrentTraj();
 
-    if (first_set.size() == 1 && last_set.size() == 1)
-        return;
-    for( auto train = trains.begin(); train != trains.end(); ++train )
+    QSet<QObject *> first_set(first_v_traj->getTrajVehicleSet()); // множество ПЕ на траектории первого ПЕ
+    QSet<QObject *> last_set(last_v_traj->getTrajVehicleSet()); // множство ПЕ на траектории последнего ПЕ
+
+    QSet<QObject *> unite;
+    if( first_v_traj != last_v_traj)
     {
-        if (train == train_iterator)
-            continue;;
+        unite += first_set;
+        unite += last_set;
+    } else
+        unite = first_set;
 
-        Vehicle *first_iterator_v = *(*train_iterator)->getFirstVehicle();
-        Vehicle *last_iterator_v = *(*train_iterator)->getLastVehicle();
+    QSet<QObject *> train_vehicles((*train_iterator)->children().begin(), (*train_iterator)->children().end());
 
-        if (first_set.contains(first_iterator_v))
+    unite.subtract(train_vehicles); //  исключаем ПЕ просчитываемого поезда
+
+    if (unite.isEmpty())
+        return;
+
+    QSet<QObject *> near_trains;
+
+    for (auto vehicle = unite.begin(); vehicle != unite.end(); ++vehicle)
+    {
+        near_trains.insert((*vehicle)->parent()); //вычисляем поезда рядом с нашим
+    }
+    //проверяем поезда рядом по координатам
+    for (auto train_obj = near_trains.begin(); train_obj != near_trains.end(); ++train_obj)
+    {
+        Train *train = qobject_cast<Train *>(*train_obj);
+
+        Vehicle *first_v = *train->getFirstVehicle();
+        Vehicle *last_v = *train->getLastVehicle();
+
+        if (first_set.contains(first_v))
         {
             if (std::abs(first_v->getTrajCoord() - first_iterator_v->getTrajCoord()) <
                     0.5 * (first_v->getLength() + first_iterator_v->getLength()))
             {
-                couple();
-                continue;
-            }
-
-        }
-        if (first_set.contains(last_iterator_v))
-        {
-            if (std::abs(first_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
-                    0.5 * (first_v->getLength() + last_iterator_v->getLength()))
-            {
-                (*train)->addVehiclesBack((*train_iterator)->getVehicles(), false);
+                train->addVehiclesFront((*train_iterator)->getVehicles());
+                trains.remove(*train_iterator);
                 delete *train_iterator;
                 continue;
             }
 
         }
-        if (last_set.contains(last_iterator_v))
-        {
-            if (std::abs(last_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
-                    0.5 * (last_v->getLength() + last_iterator_v->getLength()))
-            {
-                (*train_iterator)->addVehiclesBack((*train)->getVehicles(), true);
-                continue;
-            }
-
-        }
-        if (last_set.contains(first_iterator_v))
+        if (first_set.contains(last_v))
         {
             if (std::abs(last_v->getTrajCoord() - first_iterator_v->getTrajCoord()) <
                     0.5 * (last_v->getLength() + first_iterator_v->getLength()))
             {
-                (*train_iterator)->addVehiclesBack((*train)->getVehicles(), false);
-                delete *train;
+                train->addVehiclesBack((*train_iterator)->getVehicles(), false);
+                trains.remove(*train_iterator);
+                delete *train_iterator;
+                continue;
+            }
+
+        }
+
+
+        if (last_set.contains(last_v))
+        {
+            if (std::abs(last_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
+                    0.5 * (last_v->getLength() + last_iterator_v->getLength()))
+            {
+                (*train_iterator)->addVehiclesBack(train->getVehicles(), true);
+                trains.remove(train);
+                delete train;
+                continue;
+            }
+
+        }
+        if (last_set.contains(first_v))
+        {
+            if (std::abs(first_v->getTrajCoord() - last_iterator_v->getTrajCoord()) <
+                    0.5 * (first_v->getLength() + last_iterator_v->getLength()))
+            {
+                (*train_iterator)->addVehiclesBack(train->getVehicles(), false);
+                trains.remove(train);
+                delete train;
                 continue;
             }
         }
     }
 }
+
 
 //------------------------------------------------------------------------------
 //

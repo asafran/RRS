@@ -9,11 +9,11 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(parent)
+Train::Train(Topology *topology, QObject *parent) : OdeSystem(parent)
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
-  , profile(profile)
+//  , profile(profile)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
@@ -25,11 +25,11 @@ Train::Train(Profile *profile, Topology *topology, QObject *parent) : OdeSystem(
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Train::Train(Profile *profile, Topology *topology, init_data_t init_data, QObject *parent) : OdeSystem(parent)
+Train::Train(Topology *topology, init_data_t init_data, QObject *parent) : OdeSystem(parent)
   , trainMass(0.0)
   , trainLength(0.0)
   , ode_order(0)
-  , profile(profile)
+//  , profile(profile)
   , train_motion_solver(nullptr)
   , brakepipe(nullptr)
   , soundMan(nullptr)
@@ -170,7 +170,7 @@ bool Train::init()
 
 }
 
-void Train::placeTrain(const topology_pos_t &tp)
+void Train::updatePos(const topology_pos_t &tp)
 {
     if (vehicles.isEmpty())
     {
@@ -183,13 +183,21 @@ void Train::placeTrain(const topology_pos_t &tp)
     vehicles[0]->setInitRailwayCoord(0.0);
 
     double traj_coord = tp.traj_coord;
-    Trajectory *cur_traj = topo->getTrajList()[tp.traj_name];
+    topo->getTrajList()[tp.traj_name]->setBusy(vehicles[0]);
 
-    cur_traj->setBusy(vehicles[0]);
+    updatePos();
 
-    int direction = tp.dir;
+    Journal::instance()->info("Train placed on topology_pos_t");
 
-    for (auto i = vehicles.begin(); i != vehicles.end(); ++i)
+}
+
+void Train::updatePos()
+{
+    int direction = vehicles[0]->getTopologyDirection();
+    double traj_coord = vehicles[0]->getTrajCoord();
+    Trajectory *cur_traj = vehicles[0]->getCurrentTraj();
+
+    for (auto i = vehicles.begin() + 1; i != vehicles.end(); ++i)
     {
         double L = (*(i-1))->getLength() + (*i)->getLength() / 2.0;
 
@@ -250,8 +258,6 @@ void Train::placeTrain(const topology_pos_t &tp)
 
         cur_traj->setBusy(*i);
     }
-    Journal::instance()->info("Train placed on topology_pos_t");
-
 }
 
 //------------------------------------------------------------------------------
@@ -289,7 +295,9 @@ void Train::calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t)
             vehicle1->setForwardForce(R);
         }
 
-        profile_element_t pe = profile->getElement(vehicle->getRailwayCoord());
+        profile_element_t pe = vehicle->getCurrentTraj()->getProfileElement(vehicle->getTrajCoord());
+
+        pe.inclination *= vehicle->getTopologyDirection();
 
         vehicle->setInclination(pe.inclination);
         vehicle->setCurvature(pe.curvature);
@@ -687,6 +695,7 @@ bool Train::addVehiclesBack(QVector<Vehicle *> vehicles_add, bool reversed)
     }
 
     y[0] = 0;
+    updateTrainCoords();
     updatePos();
 
     brakepipe->setLength(trainLength);
@@ -829,6 +838,7 @@ bool Train::addVehiclesFront(QVector<Vehicle *> vehicles_add)
         return false;
     }
     y[0] = 0;
+    updateTrainCoords();
     updatePos();
 
     // Brakepipe initialization
@@ -869,7 +879,7 @@ void Train::connectToTrain(Vehicle * vehicle)
     connect(vehicle, &Vehicle::volumeCurveStep, soundMan, &SoundManager::volumeCurveStep, Qt::DirectConnection);
 }
 
-void Train::updatePos()
+void Train::updateTrainCoords()
 {
     Journal::instance()->info(QString("Vehicle[%2] coordinate: %1").arg(y[0]).arg(0, 3));
 
@@ -887,7 +897,7 @@ void Train::updatePos()
     }
 }
 
-void Train::updatePos(double coord)
+void Train::updateTrainCoords(double coord)
 {
     double x0 = coord * 1000.0 - (*this->getFirstVehicle())->getLength() / 2.0;
     y[0] = x0;

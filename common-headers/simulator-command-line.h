@@ -17,8 +17,6 @@ struct simulator_init_t
     std::optional<bool>      clear_log;
     /// Debug print in simulation loop
     std::optional<bool>      debug_print;
-    /// Initial railway coordinate
-    std::optional<double>    init_coord;
     /// Initial speed
     std::optional<double>    init_velocity;
     /// Initial direction

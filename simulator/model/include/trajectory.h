@@ -6,6 +6,7 @@
 
 #include    "track.h"
 #include    "vehicle-controller.h"
+#include    "profile-element.h"
 
 class       Connector;
 
@@ -44,6 +45,8 @@ public:
 
     bool isBusy() const { return !vehicles_on_traj.isEmpty(); }
 
+    profile_element_t getProfileElement(double traj_coord);
+
     QSet<VehicleController *> getTrajVehicleSet() const { return vehicles_on_traj; }
 
 protected:
@@ -58,7 +61,9 @@ protected:
 
     QSet<VehicleController *> vehicles_on_traj;
 
-    std::vector<track_t>    tracks;
+    QVector<profile_element_t> profile_data;
+
+    QVector<track_t>    tracks;
 
     track_t findTrack(double x, track_t &next_track);
 };

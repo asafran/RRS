@@ -26,13 +26,15 @@ public:
 
     void setTrajCoord(double traj_coord) { this->traj_coord = traj_coord; }
 
-    void setTopologyDirection(int dir) { this->dir = dir; }
+    void setTopologyDirection(int dir) { direction = dir; }
 
     vec3d getPosition(vec3d &attitude) const;
 
     Trajectory *getCurrentTraj() const { return current_traj; }
 
     double getTrajCoord() const { return traj_coord; }
+
+    int getTopologyDirection() const { return direction; }
 
 public slots:
 

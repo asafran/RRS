@@ -54,9 +54,9 @@ class TRAIN_EXPORT Train : public OdeSystem
 public:
 
     /// Constructor
-    explicit Train(Profile *profile, Topology *topology, QObject *parent = Q_NULLPTR);
+    explicit Train(Topology *topology, QObject *parent = Q_NULLPTR);
 
-    explicit Train(Profile *profile, Topology *topology, init_data_t init_data, QObject *parent = Q_NULLPTR);
+    explicit Train(Topology *topology, init_data_t init_data, QObject *parent = Q_NULLPTR);
 
     /// Destructor
     virtual ~Train();
@@ -68,9 +68,9 @@ public:
 
     bool addVehiclesFront(QVector<Vehicle *> vehicles_add);
 
-    void updatePos();
+    void updateTrainCoords();
 
-    void updatePos(double coord);
+    void updateTrainCoords(double coord);
 
     void setSpeed(double V, const double coeff);
 
@@ -78,7 +78,9 @@ public:
 
     void updateBrakepipe();
 
-    void placeTrain(const topology_pos_t &tp);
+    void updatePos(const topology_pos_t &tp);
+
+    void updatePos();
 
     /// Calculation of right part motion ODE's
     void calcDerivative(state_vector_t &Y, state_vector_t &dYdt, double t);
@@ -149,7 +151,7 @@ private:
 //    int             dir;
 
     /// Profile manager
-    Profile     *profile;
+//    Profile     *profile;
 /*
     double init_velocity;
 

@@ -9,14 +9,14 @@
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-Profile::Profile(int dir, const std::string &routeDir)
+Profile::Profile(int dir, const QString &routeDir)
     : is_ready(false)
     , dir(dir)
 {
     FileSystem &fs = FileSystem::getInstance();
-    std::string path = fs.toNativeSeparators(routeDir);
+    QString path = fs.toNativeSeparators(routeDir);
 
-    Journal::instance()->info("Route directory: " + QString(routeDir.c_str()));
+    Journal::instance()->info("Route directory: " + routeDir);
 
     if (dir > 0)
     {
@@ -89,20 +89,20 @@ profile_element_t Profile::getElement(double railway_coord)
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-bool Profile::load(const std::string &path)
+bool Profile::load(const QString &path)
 {
-    if (path.empty())
+    if (path.isEmpty())
     {
         Journal::instance()->error("Profile path is empty");
         return false;
     }
 
-    std::ifstream stream(path.c_str(), std::ios::in);
+    std::ifstream stream(path.toStdString(), std::ios::in);
 
     if (!stream.is_open())
     {
-        std::cout << "File " << path << " not opened" << std::endl;
-        Journal::instance()->error("File " + QString(path.c_str()) + " is't found");
+        std::cout << "File " << path.toStdString() << " not opened" << std::endl;
+        Journal::instance()->error("File " + path + " is't found");
         return false;
     }
 

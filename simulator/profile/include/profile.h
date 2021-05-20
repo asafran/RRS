@@ -7,9 +7,9 @@
 #ifndef     PROFILE_H
 #define     PROFILE_H
 
-#include    <string>
+#include    <QString>
 #include    <fstream>
-#include    <vector>
+#include    <QVector>
 
 #include    "profile-element.h"
 
@@ -27,7 +27,7 @@ public:
 
     }
 
-    Profile(int dir, const std::string &routeDir);
+    Profile(int dir, const QString &routeDir);
 
     ~Profile();
 
@@ -41,9 +41,9 @@ private:
 
     int     dir;
 
-    std::vector<profile_element_t> profile_data;
+    QVector<profile_element_t> profile_data;
 
-    bool load(const std::string &path);
+    bool load(const QString &path);
 
     bool load(std::ifstream &stream);
 };

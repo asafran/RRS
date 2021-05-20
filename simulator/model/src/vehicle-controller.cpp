@@ -8,7 +8,7 @@
 VehicleController::VehicleController(QObject *parent) : QObject(parent)
   , x_prev(0.0)
   , x_cur(0.0)
-  , dir(1)
+  , direction(1)
   , traj_coord(0.0)
   , current_traj(Q_NULLPTR)
   , prev_traj(Q_NULLPTR)

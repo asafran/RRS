@@ -6,6 +6,7 @@
 
 #include    "physics.h"
 #include    "connector.h"
+#include    "Journal.h"
 
 //------------------------------------------------------------------------------
 //
@@ -73,6 +74,37 @@ bool Trajectory::load(QString route_dir, QString traj_name)
         length += track.length;
     }
 
+    QString profile_path = route_dir + QDir::separator() + "trajectories" +
+            QDir::separator() + traj_name + ".conf";
+
+    QFile profile(profile_path);
+
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        Journal::instance()->error("Profile file not exists");
+        return false;
+    }
+
+
+    while (!profile.atEnd())
+    {
+        QString line = profile.readLine();
+
+        line.remove('\r');
+
+        QTextStream ss(&line);
+
+        profile_element_t profile_element;
+
+        ss >> profile_element.traj_coord
+           >> profile_element.inclination
+           >> profile_element.curvature;
+
+        profile_element.traj_coord *= 1000.0;
+
+        profile_data.push_back(profile_element);
+    }
+
     return true;
 }
 /*
@@ -86,6 +118,41 @@ void Trajectory::setBusy(double is_busy, Vehicle *vehicle)
 
 }
 */
+
+profile_element_t Trajectory::getProfileElement(double traj_coord)
+{
+    if (profile_data.size() == 0)
+        return profile_element_t();
+
+    if (traj_coord < (*profile_data.begin()).traj_coord)
+        return profile_element_t();
+
+    if (traj_coord >= (*(profile_data.end() - 1)).traj_coord)
+        return profile_element_t();
+
+    profile_element_t profile_element;
+
+    size_t left_idx = 0;
+    size_t right_idx = profile_data.size() - 1;
+    size_t idx = (left_idx + right_idx) / 2;
+
+    while (idx != left_idx)
+    {
+        profile_element = profile_data.at(idx);
+
+        if (traj_coord <= profile_element.traj_coord)
+            right_idx = idx;
+        else
+            left_idx = idx;
+
+        idx = (left_idx + right_idx) / 2;
+    }
+
+    profile_element = profile_data.at(idx);
+//    profile_element.inclination *= dir;
+
+    return profile_element;
+}
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
